@@ -11,7 +11,6 @@ if [ -f /etc/sysconfig/network ]; then
 fi
 
 # 2.
-
 # 3.
 [ -d /etc/sysctl.d ] || mkdir -p /etc/sysctl.d
 [ -r /etc/sysctl.d/10-network-security.conf ] || touch /etc/sysctl.d/10-network-security.conf
@@ -27,7 +26,7 @@ for f in /etc/sysctl.conf /etc/sysctl.d/*; do
     fi
 done
 
-if ! grep -q '^net\.ipv4\.conf\.\(default\|all\)\.rp_filter[[:blank:]]*=' /etc/sysctl.conf /etc/sysctl.d/*; then
+if ! grep -q -r '^net\.ipv4\.conf\.\(default\|all\)\.rp_filter[[:blank:]]*=' /etc/sysctl.*; then
         echo net.ipv4.conf.default.rp_filter=1 >> /etc/sysctl.d/10-network-security.conf
         echo net.ipv4.conf.all.rp_filter=1 >> /etc/sysctl.d/10-network-security.conf
 fi
@@ -49,7 +48,7 @@ for f in /etc/ssh/sshd_config /etc/ssh/ssh_config.d/*; do
     fi
 done
 
-grep -q '^[[:blank:]]*HostbasedAuthentication[[:blank:]]\+' /etc/ssh/sshd_config /etc/ssh/ssh_config.d/* ||\
+grep -q -r '^[[:blank:]]*HostbasedAuthentication[[:blank:]]\+' /etc/ssh/sshd_config* ||\
     echo 'HostbasedAuthentication no' >> /etc/ssh/sshd_config
 
 # 6.
@@ -60,7 +59,7 @@ for f in /etc/ssh/sshd_config /etc/ssh/ssh_config.d/*; do
     fi
 done
 
-grep -q '^[[:blank:]]*IgnoreRhosts[[:blank:]]\+' /etc/ssh/sshd_config /etc/ssh/ssh_config.d/* ||\
+grep -q -r '^[[:blank:]]*IgnoreRhosts[[:blank:]]\+' /etc/ssh/sshd_config* ||\
     echo 'IgnoreRhosts yes' >> /etc/ssh/sshd_config
 
 # 7.
@@ -85,7 +84,7 @@ for f in /etc/ssh/sshd_config /etc/ssh/ssh_config.d/*; do
     fi
 done
 
-grep -q '^[[:blank:]]*Protocol[[:blank:]]\+' /etc/ssh/sshd_config /etc/ssh/ssh_config.d/* ||\
+grep -q -r '^[[:blank:]]*Protocol[[:blank:]]\+' /etc/ssh/sshd_config* ||\
     echo 'Protocol 2' >> /etc/ssh/sshd_config
 
 # 10.
@@ -104,10 +103,13 @@ for f in /etc/ssh/sshd_config /etc/ssh/ssh_config.d/*; do
     fi
 done
 
-grep -q '^[[:blank:]]*PermitEmptyPasswords[[:blank:]]\+' /etc/ssh/sshd_config /etc/ssh/ssh_config.d/* ||\
+grep -q -r '^[[:blank:]]*PermitEmptyPasswords[[:blank:]]\+' /etc/ssh/sshd_config* ||\
     echo 'PermitEmptyPasswords no' >> /etc/ssh/sshd_config
 
 # 12.
-if ! grep -q '^[[:blank:]]*\(AllowUsers\|AllowGroups\|DenyUsers\|DenyGroups\)[[:blank:]]\+' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*; then
-	echo Ensure SSH access is limited !
+if ! grep -q -r '^[[:blank:]]*\(AllowUsers\|AllowGroups\|DenyUsers\|DenyGroups\)[[:blank:]]\+' /etc/ssh/sshd_config*; then
+    echo Ensure SSH access is limited !
+    echo 'DenyUsers someUser' >> /etc/ssh/sshd_config
 fi
+
+echo Reboot suggested.

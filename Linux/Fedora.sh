@@ -11,6 +11,7 @@ if [ -f /etc/sysconfig/network ]; then
 fi
 
 # 2.
+
 # 3.
 [ -d /etc/sysctl.d ] || mkdir -p /etc/sysctl.d
 [ -r /etc/sysctl.d/10-network-security.conf ] || touch /etc/sysctl.d/10-network-security.conf

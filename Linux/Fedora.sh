@@ -1,5 +1,68 @@
 #!/bin/bash
 
+function sysctl () {
+  local file=$1
+  local parameter=$2
+  local value=$3
+  local r1=$(echo "$parameter" | sed 's/\./\\./g')
+
+  [ -d /etc/sysctl.d ] || mkdir -p /etc/sysctl.d
+  [ -r /etc/sysctl.d/$file ] || touch /etc/sysctl.d/$file
+  for f in /etc/sysctl.conf /etc/sysctl.d/*; do
+    if [ -f "$f" ] && grep -q "^$r1[[:blank:]]*=" "$f"; then
+        if [ "$f" == "/etc/sysctl.d/$file" ]; then
+            grep "^$r1[[:blank:]]*=[[:blank:]]*" "$f" |\
+              grep -q -v "=[[:blank:]]*$value$" && \
+              sed -i "s/^\($r1\)[[:blank:]]*=.*/\1=$value/" "$f"
+        else
+            sed -i "s/^\($r1[[:blank:]]*=.*\)/#\1/" "$f"
+        fi
+    fi
+  done
+
+  if ! grep -q "^$r1[[:blank:]]*=" /etc/sysctl.conf /etc/sysctl.d/*; then
+    echo $parameter=$value >> /etc/sysctl.d/$file
+  fi
+
+}
+
+sysctl 10-network-security.conf net.ipv4.conf.default.rp_filter 1
+sysctl 10-network-security.conf net.ipv4.conf.all.rp_filter 1
+sysctl 10-network-security.conf net.ipv4.conf.default.secure_redirects 0
+sysctl 10-network-security.conf net.ipv4.conf.default.accept_redirects 0
+sysctl 10-network-security.conf net.ipv4.conf.all.log_martians 1
+
+function modprobe_conf() {
+  local file=$1
+  local command=$2
+  local modulename=$3
+  local opts=$4
+  local r1=$(echo "$command $modulename "|sed 's/[[:blank:]]\+/[[:blank:]]\\+/g')
+
+  for f in /etc/modprobe.d/*; do
+    if [ -f "$f" ] && grep -q "^$r1" "$f"; then
+        if [ "$f" == "/etc/modprobe.d/$file" ]; then
+            grep "^$r1" "$f" | grep -q -v "^$r1$opts" && \
+              sed -i "s/^\($r1).*/\1 $opts/" "$f"
+        else
+            sed -i "s/^\($r1.*)/#\1/" "$f"
+        fi
+    fi
+  done
+
+  if ! grep -q "^$r1$opts" /etc/modprobe.d/*; then
+    echo $command $modulename $opts >> /etc/modprobe.d/$file
+  fi
+
+}
+
+modprobe_conf filesystems.conf install cramfs /bin/true
+modprobe_conf filesystems.conf install hfs /bin/true
+modprobe_conf filesystems.conf install jffs2 /bin/true
+modprobe_conf filesystems.conf install hfsplus /bin/true
+modprobe_conf filesystems.conf install freevxfs /bin/true
+modprobe_conf filesystems.conf install rds /bin/true
+
 # 1.
 if [ -f /etc/sysconfig/network ]; then
     if ! grep -q '^NOZEROCONF[[:blank:]]*=.*' /etc/sysconfig/network; then
@@ -8,27 +71,6 @@ if [ -f /etc/sysconfig/network ]; then
 	grep '^NOZEROCONF[[:blank:]]*=.*' /etc/sysconfig/network | grep -q -v 'yes' &&\
           sed -i 's/^\(NOZEROCONF[[:blank:]]*=[[:blank:]]*\).*/\1yes/' /etc/sysconfig/network
     fi
-fi
-
-# 2.
-# 3.
-[ -d /etc/sysctl.d ] || mkdir -p /etc/sysctl.d
-[ -r /etc/sysctl.d/10-network-security.conf ] || touch /etc/sysctl.d/10-network-security.conf
-for f in /etc/sysctl.conf /etc/sysctl.d/*; do
-    if [ -f "$f" ] && grep -q '^net\.ipv4\.conf\.\(default\|all\)\.rp_filter[[:blank:]]*=' "$f"; then
-        if [ "$f" == "/etc/sysctl.d/10-network-security.conf" ]; then
-            grep '^net\.ipv4\.conf\.\(default\|all\)\.rp_filter[[:blank:]]*=[[:blank:]]*' "$f" |\
-	      grep -q -v '=[[:blank:]]*1$' && \
-              sed -i 's/^\(net\.ipv4\.conf\.\(default\|all\)\.rp_filter\)[[:blank:]]*=.*/\1=1/' "$f"
-        else
-            sed -i 's/^\(net\.ipv4\.conf\.\(default\|all\)\.rp_filter[[:blank:]]*=.*\)/#\1/' "$f"
-        fi
-    fi
-done
-
-if ! grep -q -r '^net\.ipv4\.conf\.\(default\|all\)\.rp_filter[[:blank:]]*=' /etc/sysctl.*; then
-        echo net.ipv4.conf.default.rp_filter=1 >> /etc/sysctl.d/10-network-security.conf
-        echo net.ipv4.conf.all.rp_filter=1 >> /etc/sysctl.d/10-network-security.conf
 fi
 
 # 4.
@@ -112,4 +154,54 @@ if ! grep -q -r '^[[:blank:]]*\(AllowUsers\|AllowGroups\|DenyUsers\|DenyGroups\)
     echo 'DenyUsers someUser' >> /etc/ssh/sshd_config
 fi
 
+# su
+if ! grep -q "^[[:blank:]]*auth[[:blank:]]\+required[[:blank:]]\+pam_wheel.so[[:blank:]]\+use_uid" /etc/pam.d/su; then
+    if grep -q "^#\+[[:blank:]]*auth[[:blank:]]\+required[[:blank:]]\+pam_wheel.so[[:blank:]]\+use_uid" /etc/pam.d/su; then
+        sed -i "s/^.*\(auth[[:blank:]]\+required[[:blank:]]\+pam_wheel.so[[:blank:]]\+use_uid.*\)$/\1/" /etc/pam.d/su
+    else
+        echo 'auth required pam_wheel.so use_uid' >> /etc/pam.d/su
+    fi
+fi
+
+# grub.cfg
+[ -f /boot/grub2/grub.cfg ] && chmod 400 /boot/grub2/grub.cfg
+
+# rsyslog.conf
+for f in /etc/rsyslog.conf /etc/rsyslog.d/*; do
+    if [ -f "$f" ]; then
+        grep '^$FileOwner[[:blank:]]*' "$f" | grep -q -v ' syslog' &&\
+	    sed -i 's/^\($FileOwner[[:blank:]]*\).*/\1 syslog' "$f"
+    fi
+done
+
+grep -q '^$FileOwner[[:blank:]]*' /etc/rsyslog.conf ||\
+    echo '$FileOwner syslog' >> /etc/rsyslog.conf
+
+# postfix inet_interfaces
+[ -r /etc/postfix/main.cf ] && echo "inet_interfaces localhost" >> /etc/postfix/main.cf
+
+# /etc/passwd-
+[ -f /etc/passwd- ] && chmod 600 /etc/passwd-
+
+# no postfix
+[ -x /usr/bin/apt-get ] && apt-get -y remove postfix
+[ -x /usr/bin/yum ] && yum -y remove postfix
+
+# portmap
+systemctl stop rpcbind.service
+systemctl disable rpcbind.service
+systemctl mask rpcbind.service
+
+# sshd banner
+for f in /etc/ssh/sshd_config /etc/ssh/ssh_config.d/*; do
+    if [ -f "$f" ]; then
+        grep '^[[:blank:]]*Banner[[:blank:]]\+' "$f" | grep -q -v '/etc/issue.net' &&\
+            sed -i 's/^\([[:blank:]]*Banner[[:blank:]]\+\).*/\= /etc/issue.net/' "$f"
+    fi
+done
+
+grep -q '^[[:blank:]]*Banner[[:blank:]]\+' /etc/ssh/sshd_config /etc/ssh/ssh_config.d/* ||\
+    echo 'Banner = /etc/issue.net' >> /etc/ssh/sshd_config
+
+# end
 echo Reboot suggested.

@@ -93,9 +93,6 @@ This Scripts can be used to fix standard Linux installations to be compliant wit
 | RULE SEVERITY | Critical |
 | ACTUAL VALUE | File /etc/ssh/sshd\_config should contain one or more lines matching [&#39;^\s\*(AllowUsers|AllowGroups|DenyUsers|DenyGroups)(\s+\S+)+&#39;] |
 
-
-### In preparation:
-
 | NAME | Sending ICMP redirects should be disabled for all interfaces. (net.ipv4.conf.default.secure\_redirects = 0) |
 | --- | --- |
 | CCEID | CCE-4151-7 |

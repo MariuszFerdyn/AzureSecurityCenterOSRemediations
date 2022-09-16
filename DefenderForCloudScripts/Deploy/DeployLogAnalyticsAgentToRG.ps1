@@ -58,14 +58,7 @@ foreach($VM in $targetVMs)
         }
         catch
         {
-            Set-AzVMExtension -VMName $VM.Name -ResourceGroupName $VM.ResourceGroupName `
-            -Name MicrosoftMonitoringAgent `
-            -TypeHandlerVersion 1.7 `
-            -Publisher Microsoft.EnterpriseCloud.Monitoring  `
-            -ExtensionType OmsAgentForLinux `
-            -Settings $publicSettings `
-            -ProtectedSettings $protectedSettings `
-            -Location $VM.Location
+            Set-AzVMExtension -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name -ExtensionName OmsAgentForLinux -ExtensionType OmsAgentForLinux -Publisher Microsoft.EnterpriseCloud.Monitoring -TypeHandlerVersion 1.7 -ProtectedSettings $protectedSettings -Settings $publicSettings -Location $VM.Location
             Write-Host "Done!" -ForeGroundColor Green
         }
     }

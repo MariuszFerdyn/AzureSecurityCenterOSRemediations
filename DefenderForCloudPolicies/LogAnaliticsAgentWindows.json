@@ -12,7 +12,7 @@
             {
               "field": "Microsoft.Compute/imageId",
               "in": "[parameters('listOfImageIdToInclude')]"
-            }
+            },
             {
               "allOf": [
                 {

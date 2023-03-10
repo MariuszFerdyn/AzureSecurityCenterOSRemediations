@@ -1,0 +1,208 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Compute/virtualMachines"
+        },
+        {
+          "anyOf": [
+            {
+              "allOf": [
+                {
+                  "field": "Microsoft.Compute/imagePublisher",
+                  "equals": "Canonical"
+                },
+                {
+                  "field": "Microsoft.Compute/imageOffer",
+                  "equals": "UbuntuServer"
+                },
+                {
+                  "field": "Microsoft.Compute/imageSKU",
+                  "notLike": "12*"
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "field": "Microsoft.Compute/imagePublisher",
+                  "equals": "RedHat"
+                },
+                {
+                  "field": "Microsoft.Compute/imageOffer",
+                  "equals": "RHEL"
+                },
+                {
+                  "field": "Microsoft.Compute/imageSKU",
+                  "notLike": "6*"
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "field": "Microsoft.Compute/imagePublisher",
+                  "equals": "OpenLogic"
+                },
+                {
+                  "field": "Microsoft.Compute/imageOffer",
+                  "like": "CentOS*"
+                },
+                {
+                  "field": "Microsoft.Compute/imageSKU",
+                  "notLike": "6*"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "then": {
+      "effect": "deployIfNotExists",
+      "details": {
+        "type": "Microsoft.Compute/virtualMachines/extensions",
+        "existenceCondition": {
+          "allOf": [
+            {
+              "field": "Microsoft.Compute/virtualMachines/extensions/type",
+              "equals": "AzureDiskEncryptionForLinux"
+            },
+            {
+              "field": "Microsoft.Compute/virtualMachines/extensions/publisher",
+              "equals": "Microsoft.Azure.Security"
+            },
+            {
+              "field": "Microsoft.Compute/virtualMachines/extensions/provisioningState",
+              "equals": "Succeeded"
+            }
+          ]
+        },
+        "name": "setByPolicy",
+        "roleDefinitionIds": [
+          "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+        ],
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "vmName": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Name of the virtual machine"
+                  }
+                },
+                "keyVaultName": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Name of the KeyVault to place the volume encryption key"
+                  }
+                },
+                "keyVaultResourceGroup": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Resource group of the KeyVault"
+                  }
+                },
+                "keyEncryptionKeyURL": {
+                  "type": "string",
+                  "defaultValue": "",
+                  "metadata": {
+                    "description": "URL of the KeyEncryptionKey used to encrypt the volume encryption key"
+                  }
+                },
+                "volumeType": {
+                  "type": "string",
+                  "defaultValue": "All",
+                  "metadata": {
+                    "description": "Type of the volume OS or Data to perform encryption operation"
+                  }
+                },
+                "forceUpdateTag": {
+                  "type": "string",
+                  "defaultValue": "1.0",
+                  "metadata": {
+                    "description": "Pass in an unique value like a GUID everytime the operation needs to be force run"
+                  }
+                },
+                "location": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Location for all resources."
+                  }
+                }
+              },
+              "variables": {
+                "extensionName": "AzureDiskEncryptionForLinux",
+                "extensionVersion": "1.1",
+                "encryptionOperation": "EnableEncryption",
+                "keyEncryptionAlgorithm": "RSA-OAEP",
+                "keyVaultResourceID": "[resourceId(parameters('keyVaultResourceGroup'), 'Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+              },
+              "resources": [
+                {
+                  "type": "Microsoft.Compute/virtualMachines/extensions",
+                  "name": "[concat(parameters('vmName'),'/', variables('extensionName'))]",
+                  "location": "[parameters('location')]",
+                  "apiVersion": "2017-03-30",
+                  "properties": {
+                    "publisher": "Microsoft.Azure.Security",
+                    "type": "[variables('extensionName')]",
+                    "typeHandlerVersion": "[variables('extensionVersion')]",
+                    "autoUpgradeMinorVersion": true,
+                    "forceUpdateTag": "[parameters('forceUpdateTag')]",
+                    "settings": {
+                      "EncryptionOperation": "[variables('encryptionOperation')]",
+                      "KeyVaultURL": "[reference(variables('keyVaultResourceId'),'2016-10-01').vaultUri]",
+                      "KeyVaultResourceId": "[variables('keyVaultResourceID')]",
+                      "KeyEncryptionKeyURL": "[parameters('keyEncryptionKeyURL')]",
+                      "KekVaultResourceId": "[if(empty(parameters('keyEncryptionKeyURL')),'',variables('keyVaultResourceID'))]",
+                      "KeyEncryptionAlgorithm": "[variables('keyEncryptionAlgorithm')]",
+                      "VolumeType": "[parameters('volumeType')]"
+                    }
+                  }
+                }
+              ]
+            },
+            "parameters": {
+              "vmName": {
+                "value": "[field('name')]"
+              },
+              "keyVaultName": {
+                "value": "[parameters('keyVaultName')]"
+              },
+              "keyVaultResourceGroup": {
+                "value": "[parameters('keyVaultResourceGroup')]"
+              },
+              "location": {
+                "value": "[field('location')]"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "parameters": {
+    "keyVaultName": {
+      "type": "String",
+      "metadata": {
+        "displayName": "keyVaultName",
+        "description": "keyVaultName - Should be in the same region as a VM (Recomendation)"
+      }
+    },
+    "keyVaultResourceGroup": {
+      "type": "String",
+      "metadata": {
+        "displayName": "keyVaultResourceGroup",
+        "description": "keyVaultResourceGroup"
+      }
+    }
+  }
+}

@@ -8,7 +8,7 @@
       },
       "activityLogAlerts_name": {
         "type": "string",
-        "defaultValue": "VNetMod"
+        "defaultValue": "RTableMod"
       },
       "emailAddress": {
         "type": "string"

@@ -4,11 +4,11 @@
     "parameters": {
       "actionGroups_name": {
         "type": "string",
-        "defaultValue": "SubHealth"
+        "defaultValue": "NetworkAdmins"
       },
       "activityLogAlerts_name": {
         "type": "string",
-        "defaultValue": "ServiceHealthActivityLogAlert"
+        "defaultValue": "NSGMod"
       },
       "emailAddress": {
         "type": "string"

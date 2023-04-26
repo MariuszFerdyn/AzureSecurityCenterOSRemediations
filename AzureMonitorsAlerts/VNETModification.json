@@ -58,6 +58,10 @@
                 {  
                    "field":"status",
                    "equals":"Succeeded"
+                },
+                {  
+                   "field":"operationName",
+                   "equals":"Microsoft.Network/virtualNetworks/write"
                 }
              ]
           },

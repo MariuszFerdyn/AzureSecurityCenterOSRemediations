@@ -53,7 +53,7 @@
                 },
                 {  
                    "field":"resourceType",
-                   "equals":"Microsoft.Network/networkSecurityGroups/securityRules"
+                   "equals":"Microsoft.Network/networkSecurityGroups"
                 },
                 {  
                    "field":"status",

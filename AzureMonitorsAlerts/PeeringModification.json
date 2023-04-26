@@ -4,7 +4,7 @@
     "parameters": {
       "actionGroups_name": {
         "type": "string",
-        "defaultValue": "NetworkAdmins"
+        "defaultValue": "NetworkAdms"
       },
       "activityLogAlerts_name": {
         "type": "string",

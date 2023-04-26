@@ -8,7 +8,7 @@
       },
       "activityLogAlerts_name": {
         "type": "string",
-        "defaultValue": "NSGMod"
+        "defaultValue": "NSGRuleMod"
       },
       "emailAddress": {
         "type": "string"

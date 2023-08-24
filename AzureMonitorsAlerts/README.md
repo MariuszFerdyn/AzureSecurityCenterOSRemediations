@@ -53,6 +53,8 @@ These sections provide Azure Monitor Alerts to be deployed on subscriptions wher
 [![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FMariuszFerdyn%2FAzureSecurityCenterOSRemediations%2Fmain%2FAzureMonitorsAlerts%2FPrivateEndpointModification.json)
 
 ## Query for all alerts with the state New
-```alertsmanagementresources
+```
+alertsmanagementresources
 | where type == 'microsoft.alertsmanagement/alerts'
-| where properties["essentials"]["alertState"] in~ ('New')'''
+| where properties["essentials"]["alertState"] in~ ('New')
+```

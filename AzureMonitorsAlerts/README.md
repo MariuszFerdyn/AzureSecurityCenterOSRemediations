@@ -55,4 +55,4 @@ These sections provide Azure Monitor Alerts to be deployed on subscriptions wher
 ## Query for all alerts with the state New
 ```alertsmanagementresources
 | where type == 'microsoft.alertsmanagement/alerts'
-| where properties["essentials"]["alertState"] in~ ('New')```
+| where properties["essentials"]["alertState"] in~ ('New')'''

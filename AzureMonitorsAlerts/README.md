@@ -58,3 +58,9 @@ alertsmanagementresources
 | where type == 'microsoft.alertsmanagement/alerts'
 | where properties["essentials"]["alertState"] in~ ('New')
 ```
+## Query for all alerts within 1 day with the state New
+```
+alertsmanagementresources
+| where type == 'microsoft.alertsmanagement/alerts'
+| where properties["essentials"]["alertState"] in~ ('New') and properties["essentials"]["startDateTime"] > ago(1d)
+```

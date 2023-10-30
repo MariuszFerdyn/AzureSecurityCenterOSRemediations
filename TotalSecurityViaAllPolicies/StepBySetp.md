@@ -6,3 +6,5 @@
 Connect-AzAccount -UseDeviceAuthentication -Tenant "TenantId"
 Set-AzContext -Subscription "SubscriptionID"
 ```
+
+## List all 

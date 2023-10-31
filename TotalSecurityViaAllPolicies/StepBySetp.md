@@ -21,7 +21,7 @@ Get-AzPolicyDefinition -Builtin|Select ResourceName|Out-File policies.txt
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ```
 
-## Execute script to test if it can be done without any parameters.
+## Execute script to test if policy can be assigned without any parameters. The results will go to the log.txt
 
 ```
 # Import-Module Az.Resources

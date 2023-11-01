@@ -11,12 +11,12 @@ Set-AzContext -Subscription "SubscriptionID"
 ```
 Get-AzPolicyDefinition -Builtin
 ```
-## Save the policiy to the file
+## Save the policiy to the file, make sure the directory where you executed script are empty.
 ```
 Get-AzPolicyDefinition -Builtin|Select ResourceName|Out-File policies.txt
 ```
 
-## Create temporary resource group, that will be used for assigning the policy to test if it can be done without any parameters.
+## Create temporary resource group, that will be used for assigning the policy to test if it can be done without any parameters. Make sure it is not exist before.
 ```
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ```

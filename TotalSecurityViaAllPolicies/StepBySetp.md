@@ -16,6 +16,11 @@ Get-AzPolicyDefinition -Builtin
 Get-AzPolicyDefinition -Builtin|Select ResourceName|Out-File policies.txt
 ```
 
+## Remove first 3 lines with headers
+```
+(Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
+```
+
 ## Create temporary resource group, that will be used for assigning the policy to test if it can be done without any parameters. Make sure it is not exist before.
 ```
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"

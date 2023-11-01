@@ -21,7 +21,7 @@ Get-AzPolicyDefinition -Builtin|Select ResourceName|Out-File policies.txt
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ```
 
-## Execute script to test if policy can be assigned without any parameters. The results will go to the log.txt
+## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The results will go to the log.txt
 
 ```
 # Import-Module Az.Resources
@@ -54,7 +54,7 @@ foreach( $policy in $listPolicy)
         $newName = $newName.SubString(0,63)
     }
 
-    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName 
+    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName -PolicyParameterObject @{"effect"="auditIfNotExists"}
 
     if( -not $? )
     {

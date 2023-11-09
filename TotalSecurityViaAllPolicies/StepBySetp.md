@@ -15,9 +15,18 @@ Install-Module Az.ResourceGraph
 ```
 Get-AzPolicyDefinition -Builtin
 ```
-## Save the policiy to the file, make sure the directory where you executed script are empty.
+## Save the policiy to the file, make sure the directory where you executed script are empty (no policies.txt). In this query we filter only build-in policies with AuditIfNotExists efect.
 ```
-Get-AzPolicyDefinition -Builtin|Select ResourceName|Out-File policies.txt
+Import-Module Az.ResourceGraph
+$query = @"
+policyresources 
+| where type == 'microsoft.authorization/policydefinitions' 
+| where properties.policyType == 'BuiltIn'
+| extend policyDefinitionId = tolower(tostring(id)), policyDefinitionDisplayName = properties.displayName, policyDefinitionEffect = properties.policyRule.then.effect, policyDefinitionEffectDefaultValue = properties.parameters.effect.defaultValue
+| where policyDefinitionEffect == 'AuditIfNotExists' or policyDefinitionEffectDefaultValue == 'AuditIfNotExists'
+| project policyDefinitionId
+"@
+Search-AzGraph -Query $query -UseTenantScope | Out-File policies.txt
 ```
 
 ## Remove first 3 lines with headers

@@ -7,6 +7,10 @@ Connect-AzAccount -UseDeviceAuthentication -Tenant "TenantId"
 Set-AzContext -Subscription "SubscriptionID"
 ```
 
+## Install ResourceGraph Module (need admin rights)
+```
+Install-Module Az.ResourceGraph
+```
 ## List all build-in policies
 ```
 Get-AzPolicyDefinition -Builtin

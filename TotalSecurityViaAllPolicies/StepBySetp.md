@@ -42,7 +42,7 @@ $policies|Out-File $fileName -Append
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ```
 
-## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The results will go to the log.txt
+## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The problems will go to the log.txt and policies without problem will go to policies-ok.txt (check if you do not have the files in current directory before execution).
 
 ```
 Import-Module Az.Resources

@@ -72,6 +72,12 @@ foreach( $policy in $listPolicy)
 
     $definition = Get-AzPolicyDefinition -Name $policy
 
+    $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
+
+    if($newName.Length -gt 63)
+    {
+        $newName = $newName.SubString(0,63)
+    }
 
     New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="AuditIfNotExists"}
 
@@ -81,6 +87,7 @@ foreach( $policy in $listPolicy)
 
         # Remove special char of new line in error
         $msg = $msg.Replace("`n",", ").Replace("`r",", ")
+        $msg = $newName + " " + $msg
 
         Add-Content "log.txt"  $policy": "$msg
         $problemsCount++

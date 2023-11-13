@@ -88,7 +88,7 @@ foreach( $policy in $listPolicy)
         $newName = $newName.SubString(0,63)
     }
 
-    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName -PolicyParameterObject @{"effect"="AuditIfNotExist"}
+    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName -PolicyParameterObject @{"effect"="AuditIfNotExists"}
 
     if( -not $? )
     {

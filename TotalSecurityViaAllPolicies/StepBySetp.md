@@ -24,9 +24,20 @@ policyresources
 | where properties.policyType == 'BuiltIn'
 | extend policyDefinitionId = tolower(tostring(id)), policyDefinitionDisplayName = properties.displayName, policyDefinitionEffect = properties.policyRule.then.effect, policyDefinitionEffectDefaultValue = properties.parameters.effect.defaultValue
 | where policyDefinitionEffect == 'AuditIfNotExists' or policyDefinitionEffectDefaultValue == 'AuditIfNotExists'
-| project policyDefinitionId
+| project split(policyDefinitionId,"/")[4]
 "@
-Search-AzGraph -Query $query -UseTenantScope | Out-File policies.txt
+$policies = Search-AzGraph -Query $query -UseTenantScope -First 1000
+
+$fileName="policies.txt"
+
+$number=0
+foreach ($policy in $policies){
+    if($number -lt 1){
+        Out-File $fileName
+    }
+
+    $policy.policyDefinitionId_4 | Out-File $fileName -Append
+}
 ```
 
 ## Remove first 3 lines with headers
@@ -42,7 +53,7 @@ New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The results will go to the log.txt
 
 ```
-# Import-Module Az.Resources
+Import-Module Az.Resources
 
 # Remove annoying prompts
 $ErrorActionPreference = "SilentlyContinue"
@@ -59,6 +70,11 @@ $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
 # Create file with logs
 Set-Content "log.txt" "Report of assignment of policies"
 
+$okCount = 0
+$problemsCount = 0
+
+$okRaport = "policies-ok.txt"
+
 foreach( $policy in $listPolicy)
 {
 
@@ -73,7 +89,6 @@ foreach( $policy in $listPolicy)
     }
 
     New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName -PolicyParameterObject @{"effect"="AuditIfNotExist"}
-    #New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName -Effect AuditIfNotExist
 
     if( -not $? )
     {
@@ -83,10 +98,33 @@ foreach( $policy in $listPolicy)
         $msg = $msg.Replace("`n",", ").Replace("`r",", ")
 
         Add-Content "log.txt"  $policy": "$msg
+        $problemsCount++
         
     }
     else {
-        Add-Content "log.txt" $policy": OK"
+        Add-Content $okRaport $policy
+        $okCount++
     }
+}
+
+Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
+
+if ($okCount -gt 0){
+    $listPolicy = Get-Content -Path $okRaport
+
+    foreach( $policy in $listPolicy) {
+        $definition = Get-AzPolicyDefinition -Name $policy
+
+        # remove [] from name (like [Preview] - these characters are not accepted in the name
+        $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
+    
+        if($newName.Length -gt 63)
+        {
+            $newName = $newName.SubString(0,63)
+        }
+        Remove-AzPolicyAssignment -Name $newName -Scope $resourceGroup.ResourceId
+    }
+
+
 }
 ```

@@ -29,15 +29,7 @@ policyresources
 $policies = Search-AzGraph -Query $query -UseTenantScope -First 1000
 
 $fileName="policies.txt"
-
-$number=0
-foreach ($policy in $policies){
-    if($number -lt 1){
-        Out-File $fileName
-    }
-
-    $policy.policyDefinitionId_4 | Out-File $fileName -Append
-}
+$policies|Out-File $fileName -Append
 ```
 
 ## Remove first 3 lines with headers

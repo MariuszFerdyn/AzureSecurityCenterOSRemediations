@@ -72,15 +72,8 @@ foreach( $policy in $listPolicy)
 
     $definition = Get-AzPolicyDefinition -Name $policy
 
-    # remove [] from name (like [Preview] - these characters are not accepted in the name
-    $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
 
-    if($newName.Length -gt 63)
-    {
-        $newName = $newName.SubString(0,63)
-    }
-
-    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name $newName -PolicyParameterObject @{"effect"="AuditIfNotExists"}
+    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="AuditIfNotExists"}
 
     if( -not $? )
     {
@@ -96,27 +89,9 @@ foreach( $policy in $listPolicy)
     else {
         Add-Content $okRaport $policy
         $okCount++
+        Remove-AzPolicyAssignment -Name "TestAssigment" -Scope $resourceGroup.ResourceId
     }
 }
 
 Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-
-if ($okCount -gt 0){
-    $listPolicy = Get-Content -Path $okRaport
-
-    foreach( $policy in $listPolicy) {
-        $definition = Get-AzPolicyDefinition -Name $policy
-
-        # remove [] from name (like [Preview] - these characters are not accepted in the name
-        $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
-    
-        if($newName.Length -gt 63)
-        {
-            $newName = $newName.SubString(0,63)
-        }
-        Remove-AzPolicyAssignment -Name $newName -Scope $resourceGroup.ResourceId
-    }
-
-
-}
 ```

@@ -104,12 +104,15 @@ Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsC
 ```
 ## Create a json with initative.
 ```
+$1st='$policyDefinitions = @"['
+$2nd='{"policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/'
+$3rd='","parameters": {"effect": {"value": "AuditIfNotExists"}}},},'
 $listPolicy = Get-Content -Path ".\policies-ok.txt"
-Set-Content 'initiative.json' '$policyDefinitions = @"['
+Set-Content 'initiative.json' $1st
 foreach( $policy in $listPolicy)
 {
-Add-Content 'initiative.json' '{"policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/''
+Add-Content 'initiative.json' $2nd
 Add-Content 'initiative.json' $policy
-Add-Content 'initiative.json' '","parameters": {"effect": {"value": "AuditIfNotExists"}}},},'
+Add-Content 'initiative.json' $3rd
 }
 ```

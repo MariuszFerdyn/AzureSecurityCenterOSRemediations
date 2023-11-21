@@ -112,7 +112,7 @@ Set-Content 'initiative.json' $1st
 foreach( $policy in $listPolicy)
 {
 Add-Content 'initiative.json' $2nd
-Add-Content 'initiative.json' $policy
+Add-Content 'initiative.json' $policy+'"'
 Add-Content 'initiative.json' $3rd
 }
 ```

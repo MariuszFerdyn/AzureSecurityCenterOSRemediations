@@ -107,12 +107,14 @@ Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsC
 $1st='$policyDefinitions = @"['
 $2nd='{"policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/'
 $3rd='","parameters": {"effect": {"value": "AuditIfNotExists"}}},},'
+$quot='"'
 $listPolicy = Get-Content -Path ".\policies-ok.txt"
 Set-Content 'initiative.json' $1st
 foreach( $policy in $listPolicy)
 {
 Add-Content 'initiative.json' $2nd
-Add-Content 'initiative.json' $policy+'"'
+$fullpolicy=$policy+$quot
+Add-Content 'initiative.json' $fullpolicy
 Add-Content 'initiative.json' $3rd
 }
 ```

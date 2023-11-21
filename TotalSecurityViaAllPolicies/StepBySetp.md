@@ -111,7 +111,7 @@ $listPolicy = Get-Content -Path ".\policies-ok.txt"
 Set-Content 'initiative.json' $1st
 foreach( $policy in $listPolicy)
 {
-$pol=$2n
+$pol=$2nd
 $pol=$pol+$policy
 $pol=$pol+$policy+$3rd
 Add-Content 'initiative.json' $pol

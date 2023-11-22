@@ -51,7 +51,7 @@ $policies|Out-File $fileName -Append
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ```
 
-## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The problems will go to the log.txt and policies without problem will go to policies-ok.txt (check if you do not have the files in current directory before execution).
+## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The problems will go to the log.txt and policies without problem will go to policies-AuditIfNotExists-ok.txt (check if you do not have the files in current directory before execution).
 
 ```
 Import-Module Az.Resources
@@ -74,7 +74,7 @@ Set-Content "log.txt" "Report of assignment of policies"
 $okCount = 0
 $problemsCount = 0
 
-$okRaport = "policies-ok.txt"
+$okRaport = "policies-AuditIfNotExists-ok.txt"
 
 foreach( $policy in $listPolicy)
 {
@@ -111,6 +111,70 @@ foreach( $policy in $listPolicy)
 
 Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 ```
+
+
+## Execute script to test if policy can be assigned without any parameters with effect Audit. The problems will go to the log.txt and policies without problem will go to policies-Audit-ok.txt (check if you do not have the files in current directory before execution).
+
+```
+Import-Module Az.Resources
+
+# Remove annoying prompts
+$ErrorActionPreference = "SilentlyContinue"
+
+# Name of Resource Group 
+$resourceGroupName="mariusz-test-policy-01"
+
+# Get file with policies
+# policy per line
+$listPolicy = Get-Content -Path ".\policies.txt"
+
+$resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
+
+# Create file with logs
+Set-Content "log.txt" "Report of assignment of policies"
+
+$okCount = 0
+$problemsCount = 0
+
+$okRaport = "policies-Audit-ok.txt"
+
+foreach( $policy in $listPolicy)
+{
+
+    $definition = Get-AzPolicyDefinition -Name $policy
+
+    $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
+
+    if($newName.Length -gt 63)
+    {
+        $newName = $newName.SubString(0,63)
+    }
+
+    New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="Audit"}
+
+    if( -not $? )
+    {
+        $msg = $Error[0].Exception.Message
+
+        # Remove special char of new line in error
+        $msg = $msg.Replace("`n",", ").Replace("`r",", ")
+        $msg = $newName + " " + $msg
+
+        Add-Content "log.txt"  $policy": "$msg
+        $problemsCount++
+        
+    }
+    else {
+        Add-Content $okRaport $policy
+        $okCount++
+        Remove-AzPolicyAssignment -Name "TestAssigment" -Scope $resourceGroup.ResourceId
+    }
+}
+
+Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
+```
+
+
 ## Create a json with initative.
 ```
 $1st='$policyDefinitions = @"['

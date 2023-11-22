@@ -7,7 +7,7 @@ Connect-AzAccount -UseDeviceAuthentication -Tenant "TenantId"
 Set-AzContext -Subscription "SubscriptionID"
 ```
 
-## Install ResourceGraph Module (need admin rights). If you do not want generate policies to implement yourself you can skip to penultimate point in this manual.
+## Install ResourceGraph Module (need admin rights). If you do not want generate policies to implement yourself you can use predefinied from this repository, so you can skip to penultimate point in this manual.
 ```
 Install-Module Az.ResourceGraph
 ```

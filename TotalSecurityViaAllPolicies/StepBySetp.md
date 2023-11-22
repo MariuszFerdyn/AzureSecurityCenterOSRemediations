@@ -191,7 +191,6 @@ Add-Content 'initiative.json' $pol
 }
 $3rd='","parameters": {"effect": {"value": "Audit"}}},'
 $listPolicy = Get-Content -Path ".\policies-Audit-ok.txt"
-Set-Content 'initiative.json' $1st
 foreach( $policy in $listPolicy)
 {
 $pol=$2nd

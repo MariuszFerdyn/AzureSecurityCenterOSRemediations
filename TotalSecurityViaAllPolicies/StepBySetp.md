@@ -51,7 +51,7 @@ $policies|Out-File $fileName -Append
 New-AzResourceGroup -Name "mariusz-test-policy-01" -Location "West Europe"
 ```
 
-## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The problems will go to the log.txt and policies without problem will go to policies-AuditIfNotExists-ok.txt (check if you do not have the files in current directory before execution).
+## Execute script to test if policy can be assigned without any parameters with effect auditIfNotExists. The problems will go to the log-auditIfNotExists.txt and policies without problem will go to policies-AuditIfNotExists-ok.txt (check if you do not have the files in current directory before execution).
 
 ```
 Import-Module Az.Resources
@@ -69,7 +69,7 @@ $listPolicy = Get-Content -Path ".\policies.txt"
 $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
 
 # Create file with logs
-Set-Content "log.txt" "Report of assignment of policies"
+Set-Content "log-auditIfNotExists.txt" "Report of assignment of policies"
 
 $okCount = 0
 $problemsCount = 0
@@ -98,7 +98,7 @@ foreach( $policy in $listPolicy)
         $msg = $msg.Replace("`n",", ").Replace("`r",", ")
         $msg = $newName + " " + $msg
 
-        Add-Content "log.txt"  $policy": "$msg
+        Add-Content "log-auditIfNotExists.txt"  $policy": "$msg
         $problemsCount++
         
     }
@@ -113,7 +113,7 @@ Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsC
 ```
 
 
-## Execute script to test if policy can be assigned without any parameters with effect Audit. The problems will go to the log.txt and policies without problem will go to policies-Audit-ok.txt (check if you do not have the files in current directory before execution).
+## Execute script to test if policy can be assigned without any parameters with effect Audit. The problems will go to the log-Audit.txt and policies without problem will go to policies-Audit-ok.txt (check if you do not have the files in current directory before execution).
 
 ```
 Import-Module Az.Resources
@@ -131,7 +131,7 @@ $listPolicy = Get-Content -Path ".\policies.txt"
 $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
 
 # Create file with logs
-Set-Content "log.txt" "Report of assignment of policies"
+Set-Content "log-Audit.txt" "Report of assignment of policies"
 
 $okCount = 0
 $problemsCount = 0
@@ -160,7 +160,7 @@ foreach( $policy in $listPolicy)
         $msg = $msg.Replace("`n",", ").Replace("`r",", ")
         $msg = $newName + " " + $msg
 
-        Add-Content "log.txt"  $policy": "$msg
+        Add-Content "log-Audit.txt"  $policy": "$msg
         $problemsCount++
         
     }
@@ -180,7 +180,7 @@ Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsC
 $1st='$policyDefinitions = @"['
 $2nd='{"policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/'
 $3rd='","parameters": {"effect": {"value": "AuditIfNotExists"}}},},'
-$listPolicy = Get-Content -Path ".\policies-ok.txt"
+$listPolicy = Get-Content -Path ".\policies-AuditIfNotExists-ok.txt"
 Set-Content 'initiative.json' $1st
 foreach( $policy in $listPolicy)
 {

@@ -186,7 +186,7 @@ foreach( $policy in $listPolicy)
 {
 $pol=$2nd
 $pol=$pol+$policy
-$pol=$pol+$policy+$3rd
+$pol=$pol+$3rd
 Add-Content 'initiative.json' $pol
 }
 $3rd='","parameters": {"effect": {"value": "Audit"}}},'

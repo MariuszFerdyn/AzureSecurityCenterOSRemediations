@@ -20,10 +20,6 @@ Get-AzPolicyDefinition -Builtin
  Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
 ```
 
-## Left only policy id in file
-```
-(Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
-```
 ### ** Not in use *** Save the policiy to the file, make sure the directory where you executed script are empty (no policies.txt). In this query we filter only build-in policies with AuditIfNotExists efect.
 ```
 Import-Module Az.ResourceGraph
@@ -41,9 +37,13 @@ $fileName="policies.txt"
 $policies|Out-File $fileName -Append
 ```
 
-### ** Not in use ** Remove first 3 lines with headers
+## Remove first 3 lines with headers
 ```
 (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
+```
+## Left only policy id in file
+```
+(Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
 ```
 
 ## Create temporary resource group, that will be used for assigning the policy to test if it can be done without any parameters. Make sure it is not exist before.

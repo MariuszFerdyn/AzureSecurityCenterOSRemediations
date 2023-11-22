@@ -15,7 +15,7 @@ Install-Module Az.ResourceGraph
 ```
 Get-AzPolicyDefinition -Builtin
 ```
-## List all build-in policies (make sure the directory where you executed script are empty - no policies.txt)
+## List all build-in policies and write it to dile. (make sure the directory where you executed script are empty - no policies.txt)
 ```
  Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
 ```

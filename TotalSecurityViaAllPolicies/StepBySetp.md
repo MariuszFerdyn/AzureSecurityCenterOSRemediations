@@ -175,9 +175,9 @@ Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsC
 ```
 
 
-## Create a json with initative.
+## Create a json with initative. Check if initiative.json doesn't exist in current directory.
 ```
-$1st='$policyDefinitions = @"['
+$1st='['
 $2nd='{"policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/'
 $3rd='","parameters": {"effect": {"value": "AuditIfNotExists"}}},'
 $listPolicy = Get-Content -Path ".\policies-AuditIfNotExists-ok.txt"
@@ -198,4 +198,10 @@ $pol=$pol+$policy
 $pol=$pol+$policy+$3rd
 Add-Content 'initiative.json' $pol
 }
+$stream = [IO.File]::OpenWrite('initiative.json')
+$stream.SetLength($stream.Length - 2)
+$stream.Close()
+$stream.Dispose()
+$4rd=']'
+Add-Content 'initiative.json' $4rd
 ```

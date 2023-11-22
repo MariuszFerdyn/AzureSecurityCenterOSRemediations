@@ -17,7 +17,7 @@ Get-AzPolicyDefinition -Builtin
 ```
 ## List all build-in policies
 ```
-Get-AzPolicyDefinition -Builtin||Select PolicyDefinitionId|out-File policies.txt
+ Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
 ```
 
 ## Left only policy id in file

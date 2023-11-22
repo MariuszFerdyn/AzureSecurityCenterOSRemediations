@@ -205,3 +205,8 @@ $stream.Dispose()
 $4rd=']'
 Add-Content 'initiative.json' $4rd
 ```
+## Create initiative with Name TotalSecotity
+```
+New-AzPolicySetDefinition -Name 'TotalSecurity' -PolicyDefinition initiative.json
+```
+## Now you can assign the initiative to suscription or managed group

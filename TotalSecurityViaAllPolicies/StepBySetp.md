@@ -15,7 +15,16 @@ Install-Module Az.ResourceGraph
 ```
 Get-AzPolicyDefinition -Builtin
 ```
-## Save the policiy to the file, make sure the directory where you executed script are empty (no policies.txt). In this query we filter only build-in policies with AuditIfNotExists efect.
+## List all build-in policies
+```
+Get-AzPolicyDefinition -Builtin||Select PolicyDefinitionId|out-File policies.txt
+```
+
+## Left only policy id in file
+```
+(Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
+```
+### ** Not in use *** Save the policiy to the file, make sure the directory where you executed script are empty (no policies.txt). In this query we filter only build-in policies with AuditIfNotExists efect.
 ```
 Import-Module Az.ResourceGraph
 $query = @"
@@ -32,7 +41,7 @@ $fileName="policies.txt"
 $policies|Out-File $fileName -Append
 ```
 
-## Remove first 3 lines with headers
+### ** Not in use ** Remove first 3 lines with headers
 ```
 (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
 ```

@@ -205,7 +205,7 @@ $stream.Dispose()
 $4rd=']'
 Add-Content 'initiative.json' $4rd
 ```
-## Create initiative with Name TotalSecotity
+## Create initiative with Name TotalSecotity - To be honest you can skip all the above steps and download the initiative.json from this repo and just execute this command.
 ```
 New-AzPolicySetDefinition -Name 'TotalSecurity' -PolicyDefinition initiative.json
 ```

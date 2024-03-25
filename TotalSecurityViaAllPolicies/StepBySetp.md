@@ -13,7 +13,7 @@ Install-Module Az.ResourceGraph
 ```
 ## List all build-in policies
 ```
-Get-AzPolicyDefinition -Builtin
+Get-AzPolicyDefinition -Builtin|ConvertTo-Json
 ```
 ## List all build-in policies and write it to file. (make sure the directory where you executed script are empty - no policies.txt)
 ```

@@ -106,5 +106,5 @@ steps:
             }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-        Get-Content log-auditIfNotExists.txt, log-Audit.txt | Set-Content AllMicrosoftPolicies.txt
+        Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
         cat AllMicrosoftPolicies.txt

@@ -1,1 +1,26 @@
-ls
+trigger:
+  - none
+
+parameters:
+- name: env
+  displayName: Environment
+  type: string
+  default: d
+  values:
+  - d
+
+variables:
+  - group: policy-${{parameters.env}}
+
+pool:
+  vmImage: windows-latest
+
+
+steps:
+- task: AzurePowerShell@5
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    Inline: |
+      Install-Module Az.ResourceGraph
+      Get-AzPolicyDefinition -Builtin|ConvertTo-Json

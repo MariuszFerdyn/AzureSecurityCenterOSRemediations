@@ -21,6 +21,7 @@ steps:
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
     ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
     Inline: |
       Install-Module Az.ResourceGraph
       Get-AzPolicyDefinition -Builtin|ConvertTo-Json

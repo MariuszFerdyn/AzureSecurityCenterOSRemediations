@@ -68,6 +68,9 @@ steps:
         }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
+        cat log-Audit.txt
+        exit (0)
+        ###
         Import-Module Az.Resources
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"

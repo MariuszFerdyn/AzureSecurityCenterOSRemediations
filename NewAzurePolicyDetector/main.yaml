@@ -39,10 +39,10 @@ steps:
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"
         # Name of Resource Group 
-                # Get file with policies
+        # Get file with policies
         # policy per line
         $listPolicy = Get-Content -Path ".\policies.txt"
-                # Create file with logs
+        # Create file with logs
         Set-Content "log-Audit.txt" "Report of assignment of policies"
         $okCount = 0
         $problemsCount = 0

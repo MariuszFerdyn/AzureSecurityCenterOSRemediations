@@ -23,13 +23,12 @@ steps:
     ScriptType: 'InlineScript'
     azurePowerShellVersion: 'LatestVersion'
     Inline: |
-       Install-Module Az.ResourceGraph
-       Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
-       (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
-       (Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
-       cat ./policies.txt|wc
-       #New-AzResourceGroup -Name "AzurePoliciesChecker" -Location "East US"
-
+        Install-Module Az.ResourceGraph
+        Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
+        (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
+        (Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
+        cat ./policies.txt|wc
+        # New-AzResourceGroup -Name "AzurePoliciesChecker" -Location "East US"
         Import-Module Az.Resources
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"
@@ -46,31 +45,30 @@ steps:
         $okRaport = "policies-Audit-ok.txt"
         foreach( $policy in $listPolicy)
         {
-            $definition = Get-AzPolicyDefinition -Name $policy
-            $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
-            if($newName.Length -gt 63)
-            {
-                $newName = $newName.SubString(0,63)
-            }
-            New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="Audit"}
-            if( -not $? )
-            {
-                $msg = $Error[0].Exception.Message
-                # Remove special char of new line in error
-                $msg = $msg.Replace("`n",", ").Replace("`r",", ")
-                $msg = $newName + " " + $msg
-                Add-Content "log-Audit.txt"  $policy": "$msg
-                $problemsCount++
-            }
-            else {
-                Add-Content $okRaport $policy
-                $okCount++
-                Remove-AzPolicyAssignment -Name "TestAssigment" -Scope $resourceGroup.ResourceId
-            }
+        $definition = Get-AzPolicyDefinition -Name $policy
+        $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
+        if($newName.Length -gt 63)
+        {
+        $newName = $newName.SubString(0,63)
+        }
+        New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="Audit"}
+        if( -not $? )
+        {
+        $msg = $Error[0].Exception.Message
+        # Remove special char of new line in error
+        $msg = $msg.Replace("`n",", ").Replace("`r",", ")
+        $msg = $newName + " " + $msg
+        Add-Content "log-Audit.txt"  $policy": "$msg
+        $problemsCount++
+        }
+        else {
+        Add-Content $okRaport $policy
+        $okCount++
+        Remove-AzPolicyAssignment -Name "TestAssigment" -Scope $resourceGroup.ResourceId
+        }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-
-       Import-Module Az.Resources
+        Import-Module Az.Resources
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"
         # Name of Resource Group 
@@ -86,29 +84,28 @@ steps:
         $okRaport = "policies-AuditIfNotExists-ok.txt"
         foreach( $policy in $listPolicy)
         {
-            $definition = Get-AzPolicyDefinition -Name $policy
-            $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
-            if($newName.Length -gt 63)
-            {
-                $newName = $newName.SubString(0,63)
-            }
-            New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="AuditIfNotExists"}
-            if( -not $? )
-            {
-                $msg = $Error[0].Exception.Message
-                # Remove special char of new line in error
-                $msg = $msg.Replace("`n",", ").Replace("`r",", ")
-                $msg = $newName + " " + $msg
-                Add-Content "log-auditIfNotExists.txt"  $policy": "$msg
-                $problemsCount++
-            }
-            else {
-                Add-Content $okRaport $policy
-                $okCount++
-                Remove-AzPolicyAssignment -Name "TestAssigment" -Scope $resourceGroup.ResourceId
-            }
+        $definition = Get-AzPolicyDefinition -Name $policy
+        $newName = $definition.Properties.DisplayName.Replace("[", "").Replace("]","")
+        if($newName.Length -gt 63)
+        {
+        $newName = $newName.SubString(0,63)
+        }
+        New-AzPolicyAssignment -Scope $resourceGroup.ResourceId -PolicyDefinition $definition -Name "TestAssigment" -PolicyParameterObject @{"effect"="AuditIfNotExists"}
+        if( -not $? )
+        {
+        $msg = $Error[0].Exception.Message
+        # Remove special char of new line in error
+        $msg = $msg.Replace("`n",", ").Replace("`r",", ")
+        $msg = $newName + " " + $msg
+        Add-Content "log-auditIfNotExists.txt"  $policy": "$msg
+        $problemsCount++
+        }
+        else {
+        Add-Content $okRaport $policy
+        $okCount++
+        Remove-AzPolicyAssignment -Name "TestAssigment" -Scope $resourceGroup.ResourceId
+        }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-
         Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
         cat AllMicrosoftPolicies.txt

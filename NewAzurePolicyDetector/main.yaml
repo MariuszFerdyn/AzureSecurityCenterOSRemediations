@@ -38,6 +38,8 @@ steps:
         # policy per line
         $listPolicy = Get-Content -Path ".\policies.txt"
         $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
+        Write-Host $resourceGroup.ResourceId
+        exit (0)
         # Create file with logs
         Set-Content "log-Audit.txt" "Report of assignment of policies"
         $okCount = 0

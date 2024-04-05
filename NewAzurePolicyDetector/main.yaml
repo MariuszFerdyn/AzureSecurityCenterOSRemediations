@@ -18,6 +18,7 @@ pool:
 
 steps:
 - task: AzurePowerShell@5
+  displayName: GettingAllPolicies
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
     ScriptType: 'InlineScript'
@@ -28,13 +29,21 @@ steps:
         (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
         (Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
         cat ./policies.txt|wc
-        $resourceGroupName="mariusz-test-policy-01"
+        $resourceGroupName="AzurePoliciesChecker"
         $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
         Write-Host "--------------------"
         Write-Host $resourceGroup.ResourceId
         Write-Host "--------------------"
-        exit (0)
+- task: AzurePowerShell@5
+  displayName: CheckAudit
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
+    Inline: |
         # New-AzResourceGroup -Name "AzurePoliciesChecker" -Location "East US"
+        $resourceGroupName="AzurePoliciesChecker"
+        $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
         Import-Module Az.Resources
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"
@@ -72,9 +81,16 @@ steps:
         }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-        cat log-Audit.txt
-        exit (0)
-        ###
+- task: AzurePowerShell@5
+  displayName: CheckAuditIfNotExists
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
+    Inline: |
+        # New-AzResourceGroup -Name "AzurePoliciesChecker" -Location "East US"
+        $resourceGroupName="AzurePoliciesChecker"
+        $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
         Import-Module Az.Resources
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"
@@ -114,5 +130,12 @@ steps:
         }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
+- task: AzurePowerShell@5
+  displayName: GettingAllTogheter
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
+    Inline: |        
         Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
         cat AllMicrosoftPolicies.txt

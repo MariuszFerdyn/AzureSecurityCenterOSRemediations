@@ -18,6 +18,7 @@ pool:
 
 steps:
 - task: AzurePowerShell@5
+  enabled: false
   displayName: GettingAllPolicies
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -35,6 +36,7 @@ steps:
         Write-Host $resourceGroup.ResourceId
         Write-Host "--------------------"
 - task: AzurePowerShell@5
+  enabled: false
   displayName: CheckAudit
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -82,6 +84,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 - task: AzurePowerShell@5
+  enabled: false
   displayName: CheckAuditIfNotExists
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -131,6 +134,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 - task: AzurePowerShell@5
+  enabled: false
   displayName: GettingAllTogheter
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -139,3 +143,65 @@ steps:
     Inline: |        
         Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
         cat AllMicrosoftPolicies.txt
+- task: AzurePowerShell@5
+  enabled: true
+  displayName: GettingPoliciesFromInitiative1
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
+    Inline: |
+        Import-Module -Name Az.ResourceGraph
+        $azQuery = @"
+        policyresources
+        | where type =~ 'Microsoft.Authorization/PolicySetDefinitions'
+        | where id == "/providers/Microsoft.Management/managementGroups/078ac338-05ad-4b24-b937-2837c3ed4fad/providers/Microsoft.Authorization/policySetDefinitions/adbacbc8dcbf4b1bbc6a59bd"
+        | extend policysetDefId = tolower(id)
+        | extend policyDefinitions = properties.policyDefinitions
+        | mv-expand policyDefinition = policyDefinitions limit 400
+        | extend policyDefinitionId = tolower(policyDefinition.policyDefinitionId)
+        | extend policyDefinitionReferenceId = policyDefinition.policyDefinitionReferenceId
+        | extend groupNames = policyDefinition.groupNames
+        | parse policyDefinitionId with "/providers/microsoft.authorization/policydefinitions/" policyId
+        | project policyDefinitionReferenceId, groupNames, policyId, policyDefinitionId
+        "@
+        Search-AzGraph -Query $azQuery|Out-File Initiative1.txt
+- task: AzurePowerShell@5
+  enabled: true
+  displayName: GettingPoliciesFromInitiative2
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
+    Inline: |
+        Import-Module -Name Az.ResourceGraph
+        $azQuery = @"
+        resources
+        | where type == "microsoft.compute/virtualmachines"
+        | extend powerState = properties.extended.instanceView.powerState.displayStatus
+        | extend extendedInfo = properties.extended.instanceView
+        | extend osInfo = properties.storageProfile.osDisk.osType
+        | extend osVersion = properties.storageProfile.imageReference.sku
+        | extend osProfile = properties.osProfile
+        | extend powerState = properties.extended.instanceView.powerState.code
+        | extend JoinID = toupper(id)
+        | join kind=leftouter( 
+        Resources 
+        | where type == 'microsoft.compute/virtualmachines/extensions' 
+        | extend VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),
+            ExtensionName = name 
+        ) on `$left.JoinID == `$right.VMId 
+        | summarize Extensions = make_list(ExtensionName) by id, name, subscriptionId, resourceGroup, tostring(osInfo), tostring(osVersion), tostring(powerState)
+        "@
+        Search-AzGraph -Query $azQuery|Out-File Initiative2.txt
+- task: AzurePowerShell@5
+  enabled: true
+  displayName: GetingTogether
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    ScriptType: 'InlineScript'
+    azurePowerShellVersion: 'LatestVersion'
+    Inline: |
+        Import-Module -Name Az.ResourceGraph
+        Get-Content Initiative1.txt, Initiative2.txt | Set-Content AllDeployedInitiatives.txt
+        cat AllDeployedInitiatives.txt

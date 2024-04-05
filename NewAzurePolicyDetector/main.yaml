@@ -151,6 +151,7 @@ steps:
     ScriptType: 'InlineScript'
     azurePowerShellVersion: 'LatestVersion'
     Inline: |
+        Install-Module -Name Az.ResourceGraph -Scope CurrentUser -Force
         Import-Module -Name Az.ResourceGraph
         $azQuery = @"
         policyresources
@@ -174,6 +175,7 @@ steps:
     ScriptType: 'InlineScript'
     azurePowerShellVersion: 'LatestVersion'
     Inline: |
+        Install-Module -Name Az.ResourceGraph -Scope CurrentUser -Force
         Import-Module -Name Az.ResourceGraph
         $azQuery = @"
         resources

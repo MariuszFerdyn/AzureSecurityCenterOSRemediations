@@ -23,7 +23,7 @@ steps:
     ScriptType: 'InlineScript'
     azurePowerShellVersion: 'LatestVersion'
     Inline: |
-        Install-Module Az.ResourceGraph -Currentuser -Force
+        #Install-Module Az.ResourceGraph -Currentuser -Force
         Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
         (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
         (Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt

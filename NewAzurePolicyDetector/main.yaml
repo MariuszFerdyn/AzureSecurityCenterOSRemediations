@@ -23,24 +23,26 @@ steps:
     ScriptType: 'InlineScript'
     azurePowerShellVersion: 'LatestVersion'
     Inline: |
-        Install-Module Az.ResourceGraph
+        Install-Module Az.ResourceGraph -Currentuser -Force
         Get-AzPolicyDefinition -Builtin|Select PolicyDefinitionId|Out-File policies.txt
         (Get-Content policies.txt | Select-Object -Skip 3) | Set-Content policies.txt
         (Get-Content policies.txt).Replace('/providers/Microsoft.Authorization/policyDefinitions/', '') | Set-Content policies.txt
         cat ./policies.txt|wc
+        $resourceGroupName="mariusz-test-policy-01"
+        $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
+        Write-Host "--------------------"
+        Write-Host $resourceGroup.ResourceId
+        Write-Host "--------------------"
+        exit (0)
         # New-AzResourceGroup -Name "AzurePoliciesChecker" -Location "East US"
         Import-Module Az.Resources
         # Remove annoying prompts
         $ErrorActionPreference = "SilentlyContinue"
         # Name of Resource Group 
-        $resourceGroupName="mariusz-test-policy-01"
-        # Get file with policies
+                # Get file with policies
         # policy per line
         $listPolicy = Get-Content -Path ".\policies.txt"
-        $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
-        Write-Host $resourceGroup.ResourceId
-        exit (0)
-        # Create file with logs
+                # Create file with logs
         Set-Content "log-Audit.txt" "Report of assignment of policies"
         $okCount = 0
         $problemsCount = 0

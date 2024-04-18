@@ -178,22 +178,17 @@ steps:
         Install-Module -Name Az.ResourceGraph -Scope CurrentUser -Force
         Import-Module -Name Az.ResourceGraph
         $azQuery = @"
-        resources
-        | where type == "microsoft.compute/virtualmachines"
-        | extend powerState = properties.extended.instanceView.powerState.displayStatus
-        | extend extendedInfo = properties.extended.instanceView
-        | extend osInfo = properties.storageProfile.osDisk.osType
-        | extend osVersion = properties.storageProfile.imageReference.sku
-        | extend osProfile = properties.osProfile
-        | extend powerState = properties.extended.instanceView.powerState.code
-        | extend JoinID = toupper(id)
-        | join kind=leftouter( 
-        Resources 
-        | where type == 'microsoft.compute/virtualmachines/extensions' 
-        | extend VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),
-            ExtensionName = name 
-        ) on `$left.JoinID == `$right.VMId 
-        | summarize Extensions = make_list(ExtensionName) by id, name, subscriptionId, resourceGroup, tostring(osInfo), tostring(osVersion), tostring(powerState)
+        policyresources
+        | where type =~ 'Microsoft.Authorization/PolicySetDefinitions'
+        | where id == "/providers/Microsoft.Authorization/policySetDefinitions/1f3afdf9-d0c9-4c3d-847f-89da613e70a8"
+        | extend policysetDefId = tolower(id)
+        | extend policyDefinitions = properties.policyDefinitions
+        | mv-expand policyDefinition = policyDefinitions limit 400
+        | extend policyDefinitionId = tolower(policyDefinition.policyDefinitionId)
+        | extend policyDefinitionReferenceId = policyDefinition.policyDefinitionReferenceId
+        | extend groupNames = policyDefinition.groupNames
+        | parse policyDefinitionId with "/providers/microsoft.authorization/policydefinitions/" policyId
+        | project policyDefinitionReferenceId, groupNames, policyId, policyDefinitionId
         "@
         Search-AzGraph -Query $azQuery|Out-File Initiative2.txt
 - task: AzurePowerShell@5

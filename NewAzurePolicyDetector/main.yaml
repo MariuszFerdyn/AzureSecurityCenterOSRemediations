@@ -156,14 +156,14 @@ steps:
         $azQuery = @"
         policyresources
         | where type =~ 'Microsoft.Authorization/PolicySetDefinitions'
-        | where id == "/providers/Microsoft.Management/managementGroups/078ac338-05ad-4b24-b937-2837c3ed4fad/providers/Microsoft.Authorization/policySetDefinitions/adbacbc8dcbf4b1bbc6a59bd"
+        | where id == '/providers/Microsoft.Authorization/policySetDefinitions/1f3afdf9-d0c9-4c3d-847f-89da613e70a8'
         | extend policysetDefId = tolower(id)
         | extend policyDefinitions = properties.policyDefinitions
         | mv-expand policyDefinition = policyDefinitions limit 400
         | extend policyDefinitionId = tolower(policyDefinition.policyDefinitionId)
         | extend policyDefinitionReferenceId = policyDefinition.policyDefinitionReferenceId
         | extend groupNames = policyDefinition.groupNames
-        | parse policyDefinitionId with "/providers/microsoft.authorization/policydefinitions/" policyId
+        | parse policyDefinitionId with '/providers/microsoft.authorization/policydefinitions/' policyId
         | project policyDefinitionReferenceId, groupNames, policyId, policyDefinitionId
         "@
         Search-AzGraph -Query $azQuery -UseTenantScope|Out-File Initiative1.txt
@@ -180,14 +180,14 @@ steps:
         $azQuery = @"
         policyresources
         | where type =~ 'Microsoft.Authorization/PolicySetDefinitions'
-        | where id == "/providers/Microsoft.Authorization/policySetDefinitions/1f3afdf9-d0c9-4c3d-847f-89da613e70a8"
+        | where id == '/providers/Microsoft.Authorization/policySetDefinitions/06f19060-9e68-4070-92ca-f15cc126059e'
         | extend policysetDefId = tolower(id)
         | extend policyDefinitions = properties.policyDefinitions
         | mv-expand policyDefinition = policyDefinitions limit 400
         | extend policyDefinitionId = tolower(policyDefinition.policyDefinitionId)
         | extend policyDefinitionReferenceId = policyDefinition.policyDefinitionReferenceId
         | extend groupNames = policyDefinition.groupNames
-        | parse policyDefinitionId with "/providers/microsoft.authorization/policydefinitions/" policyId
+        | parse policyDefinitionId with '/providers/microsoft.authorization/policydefinitions/' policyId
         | project policyDefinitionReferenceId, groupNames, policyId, policyDefinitionId
         "@
         Search-AzGraph -Query $azQuery -UseTenantScope|Out-File Initiative2.txt

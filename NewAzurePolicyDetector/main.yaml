@@ -18,7 +18,7 @@ pool:
 
 steps:
 - task: AzurePowerShell@5
-  enabled: false
+  enabled: true
   displayName: GettingAllPolicies
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -36,7 +36,7 @@ steps:
         Write-Host $resourceGroup.ResourceId
         Write-Host "--------------------"
 - task: AzurePowerShell@5
-  enabled: false
+  enabled: true
   displayName: CheckAudit
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -84,7 +84,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 - task: AzurePowerShell@5
-  enabled: false
+  enabled: true
   displayName: CheckAuditIfNotExists
   inputs:
     azureSubscription: $(azureSubscriptionConnection)
@@ -134,7 +134,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 - task: AzurePowerShell@5
-  enabled: false
+  enabled: true
   displayName: GettingAllTogheter
   inputs:
     azureSubscription: $(azureSubscriptionConnection)

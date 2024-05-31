@@ -18,7 +18,7 @@ pool:
 
 steps:
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: GettingAllPolicies
   inputs:
@@ -37,7 +37,7 @@ steps:
         Write-Host $resourceGroup.ResourceId
         Write-Host "--------------------"
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: CheckAudit
   inputs:
@@ -86,7 +86,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: CheckAuditIfNotExists
   inputs:
@@ -137,7 +137,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: GettingAllTogheter
   inputs:
@@ -148,7 +148,7 @@ steps:
         Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
         cat AllMicrosoftPolicies.txt
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: GettingPoliciesFromInitiative1
   inputs:
@@ -173,7 +173,7 @@ steps:
         "@
         Search-AzGraph -Query $azQuery -UseTenantScope|Out-File Initiative1.txt
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: GettingPoliciesFromInitiative2
   inputs:
@@ -198,7 +198,7 @@ steps:
         "@
         Search-AzGraph -Query $azQuery -UseTenantScope|Out-File Initiative2.txt
 - task: AzurePowerShell@5
-  timeoutInMinutes: 60
+  timeoutInMinutes: 360
   enabled: true
   displayName: GetingTogether
   inputs:

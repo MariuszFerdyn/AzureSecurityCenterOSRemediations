@@ -13,7 +13,8 @@ variables:
   - group: policy-${{parameters.env}}
 
 pool:
-  vmImage: windows-latest
+  #vmImage: windows-latest
+  name: Ubuntu2204-PrivatePool-04
 
 
 steps:

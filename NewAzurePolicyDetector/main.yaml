@@ -86,6 +86,7 @@ steps:
         }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
+        ls
 - task: AzurePowerShell@5
   timeoutInMinutes: 360
   enabled: true
@@ -137,6 +138,7 @@ steps:
         }
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
+        ls
 - task: AzurePowerShell@5
   timeoutInMinutes: 360
   enabled: true

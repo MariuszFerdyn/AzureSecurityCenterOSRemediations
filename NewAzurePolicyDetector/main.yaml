@@ -146,6 +146,7 @@ steps:
     ScriptType: 'InlineScript'
     azurePowerShellVersion: 'LatestVersion'
     Inline: |        
+        ls
         Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
         cat AllMicrosoftPolicies.txt
 - task: AzurePowerShell@5

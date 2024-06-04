@@ -87,6 +87,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
         ls
+        cat log-Audit.txt
 - task: AzurePowerShell@5
   timeoutInMinutes: 360
   enabled: true
@@ -139,6 +140,7 @@ steps:
         }
         Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
         ls
+        cat log-auditIfNotExists.txt
 - task: AzurePowerShell@5
   timeoutInMinutes: 360
   enabled: true

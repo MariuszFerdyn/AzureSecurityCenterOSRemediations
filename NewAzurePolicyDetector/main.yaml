@@ -12,9 +12,9 @@ parameters:
 variables:
   - group: policy-${{parameters.env}}
 
-pool:
-  #vmImage: windows-latest
-  name: Ubuntu2204-PrivatePool-04
+#vmImage: windows-latest
+#pool: Ubuntu2204-PrivatePool-04
+pool: Windows2019-PrivatePool01
 
 
 steps:

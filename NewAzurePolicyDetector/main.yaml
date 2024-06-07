@@ -88,8 +88,7 @@ jobs:
           }
           }
           Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-          ls
-          cat log-Audit.txt
+          dir
   - task: AzurePowerShell@5
     enabled: true
     displayName: CheckAuditIfNotExists
@@ -140,8 +139,7 @@ jobs:
           }
           }
           Write-Host("Raport of assigments, ok: " + $okCount + ", problems: " + $problemsCount)
-          ls
-          cat log-auditIfNotExists.txt
+          dir
   - task: AzurePowerShell@5
     enabled: true
     displayName: GettingAllTogheter
@@ -150,7 +148,7 @@ jobs:
       ScriptType: 'InlineScript'
       azurePowerShellVersion: 'LatestVersion'
       Inline: |        
-          ls
+          dir
           Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
           cat AllMicrosoftPolicies.txt
   - task: AzurePowerShell@5

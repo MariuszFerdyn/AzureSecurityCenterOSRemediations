@@ -172,7 +172,7 @@ jobs:
           | extend policyDefinitionReferenceId = policyDefinition.policyDefinitionReferenceId
           | extend groupNames = policyDefinition.groupNames
           | parse policyDefinitionId with '/providers/microsoft.authorization/policydefinitions/' policyId
-          | project policyDefinitionReferenceId, groupNames, policyId, policyDefinitionId
+          | project policyId, policyDefinitionReferenceId
           "@
           Search-AzGraph -Query $azQuery -UseTenantScope|Out-File Initiative1.txt
   - task: AzurePowerShell@5
@@ -196,7 +196,7 @@ jobs:
           | extend policyDefinitionReferenceId = policyDefinition.policyDefinitionReferenceId
           | extend groupNames = policyDefinition.groupNames
           | parse policyDefinitionId with '/providers/microsoft.authorization/policydefinitions/' policyId
-          | project policyDefinitionReferenceId, groupNames, policyId, policyDefinitionId
+          | project policyDefinitionReferenceId, policyId
           "@
           Search-AzGraph -Query $azQuery -UseTenantScope|Out-File Initiative2.txt
   - task: AzurePowerShell@5

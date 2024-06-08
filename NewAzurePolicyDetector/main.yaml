@@ -218,7 +218,7 @@ jobs:
       ScriptType: 'InlineScript'
       azurePowerShellVersion: 'LatestVersion'
       Inline: |
-          $dif01=((get-content AllDeployedInitatives.txt) -notmatch ((get-content AllMicrosoftPolicies.txt) -join "|") -match "[({]?[a-fA-F0-9]{8}[-]?([a-fA-F0-9]{4}[-]?){3}[a-fA-F0-9]{12}[})]?")
+          $dif01=((get-content AllDeployedInitiatives.txt) -notmatch ((get-content AllMicrosoftPolicies.txt) -join "|") -match "[({]?[a-fA-F0-9]{8}[-]?([a-fA-F0-9]{4}[-]?){3}[a-fA-F0-9]{12}[})]?")
           Write-Host $dif01
   - task: AzurePowerShell@5
     enabled: true

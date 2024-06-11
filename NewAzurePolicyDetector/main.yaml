@@ -151,11 +151,6 @@ jobs:
           dir
           Get-Content policies-AuditIfNotExists-ok.txt, policies-Audit-ok.txt | Set-Content AllMicrosoftPolicies.txt
           cat AllMicrosoftPolicies.txt
-  - task: PublishPipelineArtifact@1
-    inputs:
-      targetPath: '$(Pipeline.Workspace)'
-      artifact: 'AllMicrosoftPolicies.txt'
-      publishLocation: 'pipeline'
   - task: AzurePowerShell@5
     enabled: true
     displayName: GettingPoliciesFromInitiative1
@@ -215,8 +210,18 @@ jobs:
           Import-Module -Name Az.ResourceGraph
           Get-Content Initiative1.txt, Initiative2.txt | Set-Content AllDeployedInitiatives.txt
           cat AllDeployedInitiatives.txt
+  - task: AzurePowerShell@5
+    enabled: true
+    displayName: PrepareArtefact
+    inputs:
+      azureSubscription: $(azureSubscriptionConnection)
+      ScriptType: 'InlineScript'
+      azurePowerShellVersion: 'LatestVersion'
+      Inline: |
+          New-Item -Path "." -Name "artefacts" -ItemType "directory"
+          Copy-Item "*.txt" -Destination ".\artefacts"
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Pipeline.Workspace)'
-      artifact: 'AllDeployedInitiatives.txt'
+      targetPath: '$(Pipeline.Workspace)\artefacts'
+      artifact: 'NewAzurePolicyDetector'
       publishLocation: 'pipeline'

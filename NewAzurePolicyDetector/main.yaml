@@ -222,6 +222,6 @@ jobs:
           Copy-Item "*.txt" -Destination ".\artefacts"
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: '$(Pipeline.Workspace)\artefacts'
+      targetPath: 'artefacts'
       artifact: 'NewAzurePolicyDetector'
       publishLocation: 'pipeline'

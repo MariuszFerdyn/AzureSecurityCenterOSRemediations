@@ -245,7 +245,7 @@ jobs:
   - task: DownloadPipelineArtifact@2
     inputs:
       buildType: 'current'
-      buildVersionToDownload: 'latest'
+      buildVersionToDownload: 717
       allowFailedBuilds: false
       artifactName: 'NewAzurePolicyDetector'
       targetPath: '$(Pipeline.Workspace)'

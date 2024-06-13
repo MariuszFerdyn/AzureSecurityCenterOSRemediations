@@ -236,6 +236,7 @@ jobs:
 
 - job: DetectNew
   timeoutInMinutes: 450
+  dependsOn: Acquire
   condition: ${{eq(parameters.DetectNew, true)}}
   #vmImage: windows-latest
   pool: Ubuntu2204-PrivatePool-04

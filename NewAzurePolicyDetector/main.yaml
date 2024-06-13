@@ -8,6 +8,13 @@ parameters:
   default: d
   values:
   - d
+- name: Acquire
+  type: boolean
+  default: true
+- name: DetectNew
+  type: boolean
+  default: true
+
 
 variables:
   - group: policy-${{parameters.env}}
@@ -15,8 +22,9 @@ variables:
 
 
 jobs:
-- job: Default
+- job: Acquire
   timeoutInMinutes: 450
+  condition: ${{eq(parameters.Acquire, true)}}
   #vmImage: windows-latest
   #pool: Ubuntu2204-PrivatePool-04
   pool: Windows2019-PrivatePool01
@@ -225,3 +233,21 @@ jobs:
       targetPath: 'artefacts'
       artifact: 'NewAzurePolicyDetector'
       publishLocation: 'pipeline'
+
+- job: DetectNew
+  timeoutInMinutes: 450
+  condition: ${{eq(parameters.DetectNew, true)}}
+  #vmImage: windows-latest
+  pool: Ubuntu2204-PrivatePool-04
+  #pool: Windows2019-PrivatePool01
+
+  steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      buildType: 'current'
+      artifactName: 'NewAzurePolicyDetector'
+      targetPath: '$(Pipeline.Workspace)'
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: 'ls -l'

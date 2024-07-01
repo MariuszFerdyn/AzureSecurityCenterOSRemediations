@@ -1,0 +1,32 @@
+let top9Apps = SigninLogs
+| where ResultType == 0 // Filter to sign-ins that are successful. No interrupts
+| where AADTenantId == ResourceTenantId // Filter out cross tenant resource access.
+| where array_length(ConditionalAccessPolicies) != 0 //bootstrap
+| where UserDisplayName in ({Users}) or '*' in ({Users})
+| where ("{FilterDQ}" == "Yes" and ResourceIdentity !in ("00000002-0000-0000-c000-000000000000", "00000003-0000-0000-c000-000000000000")) or ("{FilterDQ}" != "Yes")
+| where AppDisplayName in ({Apps}) or '*' in ({Apps})
+| where '*' in ({DeviceState}) or case(DeviceDetail["trustType"] == "", "Unmanaged", DeviceDetail["trustType"]) in ({DeviceState})
+| where ("{FilterLegacy}" == "Only Legacy Authentications" and (ClientAppUsed != "Browser" and ClientAppUsed != "Mobile Apps and Desktop clients")) or ("{FilterLegacy}" != "Only Legacy Authentications")
+| where ("{TrustedLocation}" == "Only Trusted Locations" and NetworkLocationDetails contains "trustedNamedLocation") or ("{TrustedLocation}" != "Only Trusted Locations")
+| project UserDisplayName, AppDisplayName, AuthenticationRequirement
+| summarize SingleFactorUsers=dcountif(UserDisplayName, AuthenticationRequirement == "singleFactorAuthentication") by AppDisplayName
+| where SingleFactorUsers > 0
+| sort by SingleFactorUsers desc, AppDisplayName asc
+| limit 9
+| project AppDisplayName;
+SigninLogs
+| where ResultType == 0 // Filter to sign-ins that are successful. No interrupts
+| where AADTenantId == ResourceTenantId // Filter out cross tenant resource access.
+| where array_length(ConditionalAccessPolicies) != 0 //bootstrap
+| where UserDisplayName in ({Users}) or '*' in ({Users})
+| where ("{FilterDQ}" == "Yes" and ResourceIdentity !in ("00000002-0000-0000-c000-000000000000", "00000003-0000-0000-c000-000000000000")) or ("{FilterDQ}" != "Yes")
+| where '*' in ({DeviceState}) or case(DeviceDetail["trustType"] == "", "Unmanaged", DeviceDetail["trustType"]) in ({DeviceState})
+| where ("{FilterLegacy}" == "Only Legacy Authentications" and (ClientAppUsed != "Browser" and ClientAppUsed != "Mobile Apps and Desktop clients")) or ("{FilterLegacy}" != "Only Legacy Authentications")
+| where ("{TrustedLocation}" == "Only Trusted Locations" and NetworkLocationDetails contains "trustedNamedLocation") or ("{TrustedLocation}" != "Only Trusted Locations")
+| where AppDisplayName in ({Apps}) or '*' in ({Apps})
+| project UserDisplayName, AppDisplayName, AuthenticationRequirement, CorrelationId
+| extend AppDisplayName=iff(AppDisplayName in (top9Apps), AppDisplayName, "All Other Apps"), rank=iff(AppDisplayName in (top9Apps), 1, 10)
+| summarize SingleFactorUsers=dcountif(UserDisplayName, AuthenticationRequirement == "singleFactorAuthentication"), MultiFactorUsers=dcountif(UserDisplayName, AuthenticationRequirement != "singleFactorAuthentication") by AppDisplayName, rank
+| where SingleFactorUsers > 0
+| sort by rank asc, SingleFactorUsers desc
+| project AppDisplayName, SingleFactorUsers

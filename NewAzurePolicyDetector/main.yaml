@@ -251,4 +251,11 @@ jobs:
   - task: Bash@3
     inputs:
       targetType: 'inline'
-      script: 'ls -l'
+      script: |
+        cd NewAzurePolicyDetector
+        ls -l
+        cat AllMicrosoftPolicies | while read u; do
+         if ! grep -q "$u" AllDeployedInitiatives; then
+           echo "##vso[task.logissue type=error]$u"
+         fi
+        done

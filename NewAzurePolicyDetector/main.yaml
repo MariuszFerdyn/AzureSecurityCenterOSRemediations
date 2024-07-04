@@ -249,13 +249,14 @@ jobs:
       artifactName: 'NewAzurePolicyDetector'
       targetPath: '$(Pipeline.Workspace)'
   - task: Bash@3
+    displayName: DetectNewPolicies
     inputs:
       targetType: 'inline'
       script: |
         cd NewAzurePolicyDetector
         ls -l
-        cat AllMicrosoftPolicies | while read u; do
-         if ! grep -q "$u" AllDeployedInitiatives; then
+        cat AllMicrosoftPolicies.txt | while read u; do
+         if ! grep -q "$u" AllDeployedInitiatives.txt; then
            echo "##vso[task.logissue type=error]$u"
          fi
         done

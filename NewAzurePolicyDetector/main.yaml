@@ -253,8 +253,8 @@ jobs:
     inputs:
       targetType: 'inline'
       script: |
-        cd NewAzurePolicyDetector
-        ls -l
+        #cd NewAzurePolicyDetector
+        ls -lR
         cat AllMicrosoftPolicies.txt | while read u; do
          if ! grep -q "$u" AllDeployedInitiatives.txt; then
            echo "##vso[task.logissue type=error]$u"

@@ -243,18 +243,25 @@ jobs:
   #pool: Windows2019-PrivatePool01
 
   steps:
+  - task: Bash@3
+    displayName: PrepareDirectory
+    inputs:
+      targetType: 'inline'
+      script: |
+        mkdir $(System.DefaultWorkingDirectory)/data
   - task: DownloadPipelineArtifact@2
     inputs:
       buildType: 'current'
       artifactName: 'NewAzurePolicyDetector'
-      targetPath: '$(Pipeline.Workspace)'
+      targetPath: '$(System.DefaultWorkingDirectory)/data'
   - task: Bash@3
     displayName: DetectNewPolicies
     inputs:
       targetType: 'inline'
       script: |
-        #cd NewAzurePolicyDetector
+        cd $(System.DefaultWorkingDirectory)/data
         ls -lR
+        cd NewAzurePolicyDetector
         cat AllMicrosoftPolicies.txt | while read u; do
          if ! grep -q "$u" AllDeployedInitiatives.txt; then
            echo "##vso[task.logissue type=error]$u"

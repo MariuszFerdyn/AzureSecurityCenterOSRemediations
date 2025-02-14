@@ -1,7 +1,7 @@
 # Connect to both Azure and Azure AD
 #Connect-AzAccount
 #Connect-AzureAD
-$SubscriptionId="bbeef65c-98b2-4151-be75-52efe1c835a5"
+#$SubscriptionId="bbeef65c-98b2-4151-be75-52efe1c835a5" #Optional
 
 # Function to get all group members including nested groups
 function Get-AllGroupMembers {

@@ -9,21 +9,9 @@
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is  furnished to do so, subject to the following conditions:
     The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-    # PREREQUISITE
-    * Windows PowerShell version 5 and above
-        1. To check PowerShell version type "$PSVersionTable.PSVersion" in PowerShell and you will find PowerShell version,
-        2. To Install powershell follow link https://docs.microsoft.com/en-us/powershell/scripting/install/installing-windows-powershell?view=powershell-6
-    * DSC modules should be installed
-        1. NetworkingDsc
-        2. PSDesiredStateConfiguration
-        
-        To check module installation type "Get-InstalledModule -Name <ModuleName>" in PowerShell window
-        You can Install the required modules by executing below command.
-            Install-Module -Name <ModuleName> -MinimumVersion <Version>
 .EXAMPLE
     
-    .\Windows_Server_2019_Firewall_Hardening.ps1 [Script will generate MOF files in directory]
-    Start-DscConfiguration -Path .\Windows_Server_2019_Firewall_Hardening  -Force -Verbose -Wait
+    .\Windows_Server_2019_Firewall_Hardening.ps1 [Script will install required modules and then configure the firewall]
 #>
 
 # Check if running as administrator
@@ -32,6 +20,8 @@ if (-not $isAdmin) {
     Write-Error "This script requires administrator privileges. Please run PowerShell as administrator and try again."
     exit
 }
+
+# ====================== STEP 1: INSTALL AND IMPORT REQUIRED MODULES ======================
 
 Write-Host "Checking and installing required PowerShell modules..." -ForegroundColor Yellow
 
@@ -49,19 +39,37 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted') {
 
 # List of required modules
 $requiredModules = @(
+    "PSDesiredStateConfiguration",
+    "AuditPolicyDsc",
+    "SecurityPolicyDsc",
     "NetworkingDsc"
 )
 
 # Install each module if not already installed
 foreach ($module in $requiredModules) {
+    # Skip PSDesiredStateConfiguration as it's built-in
+    if ($module -eq "PSDesiredStateConfiguration") {
+        Write-Host "Module $module is built-in, skipping installation." -ForegroundColor Green
+        continue
+    }
+    
     if (-not (Get-Module -ListAvailable -Name $module)) {
         Write-Host "Installing module $module..." -ForegroundColor Cyan
         try {
-            Install-Module -Name $module -Force -Scope AllUsers
+            # First try to install with AllUsers scope
+            Install-Module -Name $module -Force -Scope AllUsers -ErrorAction Stop
             Write-Host "Module $module installed successfully." -ForegroundColor Green
         }
         catch {
-            Write-Error "Failed to install module $module. Error: $_"
+            Write-Host "Could not install $module with AllUsers scope. Trying CurrentUser scope..." -ForegroundColor Yellow
+            try {
+                # If AllUsers fails, try with CurrentUser scope
+                Install-Module -Name $module -Force -Scope CurrentUser -ErrorAction Stop
+                Write-Host "Module $module installed successfully with CurrentUser scope." -ForegroundColor Green
+            }
+            catch {
+                Write-Error "Failed to install module $module. Error: $_"
+            }
         }
     }
     else {
@@ -72,6 +80,9 @@ foreach ($module in $requiredModules) {
 # Verify all modules are installed
 $missingModules = @()
 foreach ($module in $requiredModules) {
+    # Skip the built-in PSDesiredStateConfiguration
+    if ($module -eq "PSDesiredStateConfiguration") { continue }
+    
     if (-not (Get-Module -ListAvailable -Name $module)) {
         $missingModules += $module
     }
@@ -79,18 +90,33 @@ foreach ($module in $requiredModules) {
 
 if ($missingModules.Count -gt 0) {
     Write-Error "The following modules could not be installed: $($missingModules -join ', ')"
-} else {
+    Write-Host "Running 'Start-DscConfiguration' may fail without these modules." -ForegroundColor Yellow
+}
+else {
     Write-Host "All required modules are installed successfully." -ForegroundColor Green
-    Write-Host "You can now run your firewall hardening script." -ForegroundColor Green
 }
 
-# Configuration Definition
+# ====================== STEP 2: CREATE THE CONFIGURATION ======================
+
+# Save the MOF configuration to disk
+$configurationsPath = Join-Path $env:TEMP "FirewallConfigurations"
+if (-not (Test-Path $configurationsPath)) {
+    New-Item -Path $configurationsPath -ItemType Directory -Force | Out-Null
+}
+
+# Create the configuration script file
+$configScriptPath = Join-Path $configurationsPath "FirewallConfig.ps1"
+
+# Here we create a separate configuration script that will be run in its own process
+$configScript = @'
 Configuration Windows_Server_2019_Firewall_Hardening {
     param (
         [string[]]$ComputerName = 'localhost'
     )
  
     Import-DscResource -ModuleName 'PSDesiredStateConfiguration'
+    Import-DscResource -ModuleName 'AuditPolicyDsc'
+    Import-DscResource -ModuleName 'SecurityPolicyDsc'
     Import-DscResource -ModuleName 'NetworkingDsc'
  
     Node $ComputerName {
@@ -268,38 +294,52 @@ Configuration Windows_Server_2019_Firewall_Hardening {
         }
     }
 }
-Windows_Server_2019_Firewall_Hardening
 
+# Run the configuration to generate MOF files
+Windows_Server_2019_Firewall_Hardening -OutputPath "$env:TEMP\FirewallConfigurations"
+'@
 
-# Check if MOF files were generated
-$mofPath = "Windows_Server_2019_Firewall_Hardening\localhost.mof"
-if (Test-Path $mofPath) {
-    $mofFiles = Get-ChildItem -Path $mofPath -Filter "*.mof"
-    if ($mofFiles.Count -gt 0) {
-        Write-Host "MOF files successfully generated at: $mofPath" -ForegroundColor Green
+# Write the configuration script to file
+$configScript | Out-File -FilePath $configScriptPath -Force
+
+# ====================== STEP 3: EXECUTE THE CONFIGURATION ======================
+
+Write-Host "Generating DSC configuration MOF files..." -ForegroundColor Cyan
+
+try {
+    # Execute the configuration script in a new PowerShell process
+    $mofPath = Join-Path $configurationsPath "localhost.mof"
+    
+    # Run the configuration script in a new PowerShell session
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-File `"$configScriptPath`"" -Wait -PassThru -NoNewWindow
+    
+    # Check if MOF file was generated
+    if ($process.ExitCode -eq 0 -and (Test-Path $mofPath)) {
+        Write-Host "MOF file generated successfully at: $mofPath" -ForegroundColor Green
         
-        # ASK THE USER IF THEY WANT TO IMPLEMENT THE CONFIGURATION
-        $implementConfig = Read-Host "Do you want to implement the firewall hardening configuration? (YES/NO)"
-        
-        # IF YES, EXECUTE THE START-DSCCONFIGURATION COMMAND
-        if ($implementConfig -eq "YES") {
+        # Ask user if they want to apply the configuration
+        $applyConfig = Read-Host "Do you want to apply the firewall configuration? (YES/NO)"
+        if ($applyConfig -eq "YES") {
             Write-Host "Applying DSC configuration..." -ForegroundColor Yellow
-            Start-DscConfiguration -Path .\Windows_Server_2019_Firewall_Hardening -Force -Verbose -Wait
+            
+            # Apply the configuration
+            Start-DscConfiguration -Path $configurationsPath -Force -Verbose -Wait
             
             # Check configuration status
             $status = Get-DscConfigurationStatus
             if ($status.Status -eq "Success") {
-                Write-Host "DSC Configuration applied successfully!" -ForegroundColor Green
+                Write-Host "Firewall configuration applied successfully!" -ForegroundColor Green
             } else {
-                Write-Host "DSC Configuration completed with status: $($status.Status)" -ForegroundColor Yellow
+                Write-Host "Firewall configuration completed with status: $($status.Status)" -ForegroundColor Yellow
                 Write-Host "Check the detailed logs for any issues." -ForegroundColor Yellow
             }
         } else {
-            Write-Host "Configuration implementation skipped." -ForegroundColor Cyan
+            Write-Host "Configuration not applied. You can manually apply it later with:" -ForegroundColor Cyan
+            Write-Host "Start-DscConfiguration -Path $configurationsPath -Force -Verbose -Wait" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "No MOF files were generated. Check for errors in the configuration script." -ForegroundColor Red
+        Write-Error "Failed to generate MOF file. Check for errors in the configuration script."
     }
-} else {
-    Write-Host "MOF directory not found. The configuration may have failed to compile." -ForegroundColor Red
+} catch {
+    Write-Error "Error executing configuration: $_"
 }

@@ -260,7 +260,7 @@ function Format-RedirectUris {
 Install-Module Microsoft.Graph -AllowClobber -Force -Scope CurrentUser
 #Install-Module Microsoft.Graph.Beta -AllowClobber -Force
 # Connect to Microsoft Graph
-$graphToken = (Get-AzAccessToken -Resource "https://graph.microsoft.com").Token | ConvertTo-SecureString -AsPlainText
+$graphToken = (Get-AzAccessToken -Resource "https://graph.microsoft.com").Token | ConvertTo-SecureString -AsPlainText -Force
 Connect-MgGraph -AccessToken $graphToken #-Scopes "AuditLog.Read.All", "Group.Read.All", "Application.Read.All", "Directory.Read.All"
 
 try {

@@ -17,7 +17,7 @@
     Number of days threshold for expiration check. Default is 15 days.
 
 .PARAMETER SpecificOwners
-    Array of specific owner names (DisplayName) to filter App Registrations. If not provided, all App Registrations will be checked.
+    Array of specific owner identifiers (DisplayName, UPN, or partial match) to filter App Registrations. If not provided, all App Registrations will be checked.
 
 .EXAMPLE
     .\Check-AppRegistrationSecretExpiry.ps1
@@ -28,13 +28,13 @@
     Checks all App Registrations with a 30-day expiration threshold and exports to specified location.
 
 .EXAMPLE
-    .\Check-AppRegistrationSecretExpiry.ps1 -SpecificOwners @("John Doe", "Jane Smith")
-    Checks only App Registrations owned by the specified user names.
+    .\Check-AppRegistrationSecretExpiry.ps1 -SpecificOwners @("John Doe", "jane@contoso.com")
+    Checks only App Registrations owned by the specified user names or emails.
 #>
 
 param (
     [string]$OutputPath = "AppRegistrationsWithExpiringSecrets.csv",
-    [int]$DaysToExpiration = 15,
+    [int]$DaysToExpiration = 315,
     [string[]]$SpecificOwners = @()
 )
 
@@ -58,65 +58,142 @@ function Ensure-ModulesInstalled {
 # Function to ensure authenticated to Azure
 function Ensure-AzureAuthentication {
     try {
-        # Check Az authentication
-        $azContext = Get-AzContext
-        if (-not $azContext) {
-            Write-Host "Not authenticated to Azure. Initiating Az login..."
-            Connect-AzAccount
-        }
-        else {
-            Write-Host "Already authenticated to Azure as $($azContext.Account) in subscription $($azContext.Subscription.Name)"
+        # Check if already connected to Azure
+        $context = Get-AzContext -ErrorAction SilentlyContinue
+        if (-not $context) {
+            Write-Host "Not connected to Azure. Please connect using Connect-AzAccount first."
+            throw "Not connected to Azure"
         }
         
         # Connect to Microsoft Graph
-        Connect-MgGraph -Scopes "Application.Read.All", "Directory.Read.All"
+        $graphToken = (Get-AzAccessToken -Resource "https://graph.microsoft.com").Token | ConvertTo-SecureString -AsPlainText -Force
+        Connect-MgGraph -AccessToken $graphToken -ErrorAction Stop
+        Write-Host "Successfully connected to Microsoft Graph API"
     }
     catch {
-        Write-Host "Error checking Azure authentication: $_"
-        Write-Host "Initiating logins..."
-        Connect-AzAccount
-        Connect-MgGraph -Scopes "Application.Read.All", "Directory.Read.All"
+        Write-Error "Failed to authenticate to Azure or Microsoft Graph: $_"
+        throw
     }
 }
 
 # Function to get App Registrations based on filter criteria
 function Get-FilteredAppRegistrations {
     param (
-        [string[]]$OwnerNames
+        [string[]]$OwnerIdentifiers
     )
     
     try {
         $allApps = Get-MgApplication -All
+        Write-Host "Retrieved $($allApps.Count) total App Registrations"
         
-        if ($OwnerNames.Count -gt 0) {
-            Write-Host "Filtering App Registrations by specific owners (by name)..."
+        # Only apply filtering if we have valid owners
+        $validOwners = $OwnerIdentifiers | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        
+        if ($validOwners.Count -gt 0) {
+            Write-Host "Filtering App Registrations by $($validOwners.Count) specific owners..."
+            
+            # Create debugging summary of all search terms
+            Write-Host "Owner search terms:" -ForegroundColor Cyan
+            foreach ($owner in $validOwners) {
+                Write-Host "  - [$owner]" -ForegroundColor Cyan
+            }
+            
             $filteredApps = @()
+            $appWithOwnersCount = 0
+            $matchedAppsCount = 0
             
             foreach ($app in $allApps) {
                 $appOwners = Get-MgApplicationOwner -ApplicationId $app.Id
-                foreach ($owner in $appOwners) {
-                    if ($owner.AdditionalProperties.displayName) {
-                        $ownerDisplayName = $owner.AdditionalProperties.displayName
-                    }
-                    elseif ($owner.AdditionalProperties.userPrincipalName) {
-                        $ownerDisplayName = $owner.AdditionalProperties.userPrincipalName
-                    }
-                    else {
-                        $ownerDisplayName = ""
+                
+                # Debug information for every app
+                Write-Verbose "Checking app: $($app.DisplayName) (ID: $($app.Id))"
+                
+                if ($appOwners -and $appOwners.Count -gt 0) {
+                    $appWithOwnersCount++
+                    $isMatch = $false
+                    
+                    # For debugging, explicitly identify all owners of the app
+                    $allOwnerInfo = @()
+                    
+                    foreach ($owner in $appOwners) {
+                        # Extract all possible owner identifiers
+                        $ownerIdentifiers = @()
+                        
+                        if ($owner.AdditionalProperties.displayName) {
+                            $ownerIdentifiers += $owner.AdditionalProperties.displayName
+                        }
+                        
+                        if ($owner.AdditionalProperties.userPrincipalName) {
+                            $ownerIdentifiers += $owner.AdditionalProperties.userPrincipalName
+                        }
+                        
+                        if ($owner.AdditionalProperties.mail) {
+                            $ownerIdentifiers += $owner.AdditionalProperties.mail
+                        }
+                        
+                        # Add ID as fallback
+                        $ownerIdentifiers += $owner.Id
+                        
+                        # Collect all owner info for this app
+                        $ownerSummary = $ownerIdentifiers -join " / "
+                        $allOwnerInfo += $ownerSummary
+                        
+                        # Debug output for each owner
+                        Write-Verbose "  Owner identifiers: $ownerSummary"
+                        
+                        # Check for full or partial match against any owner identifier
+                        foreach ($searchOwner in $validOwners) {
+                            foreach ($identifier in $ownerIdentifiers) {
+                                # FIXED: Use standard PowerShell comparison operators with case sensitivity
+                                $exactMatch = $identifier -ceq $searchOwner  # Case-sensitive equals
+                                $containsMatch = $identifier -and ($identifier.IndexOf($searchOwner, [StringComparison]::Ordinal) -ge 0)  # Case-sensitive contains
+                                
+                                Write-Verbose "    Comparing: '${identifier}' with '${searchOwner}' - Exact: $exactMatch, Contains: $containsMatch"
+                                
+                                # Special debugging for the problematic app
+                                if ($app.DisplayName -like "*Wnioski02*") {
+                                    Write-Host "WNIOSKI02 APP - Comparing:" -ForegroundColor Yellow
+                                    Write-Host "  Owner: '${identifier}'" -ForegroundColor Yellow
+                                    Write-Host "  Search: '${searchOwner}'" -ForegroundColor Yellow
+                                    Write-Host "  ExactMatch: $exactMatch" -ForegroundColor Yellow
+                                    Write-Host "  ContainsMatch: $containsMatch" -ForegroundColor Yellow
+                                }
+                                
+                                if ($exactMatch -or $containsMatch) {
+                                    Write-Host "Match found! App: $($app.DisplayName), Owner: $identifier" -ForegroundColor Green
+                                    $filteredApps += $app
+                                    $isMatch = $true
+                                    $matchedAppsCount++
+                                    break
+                                }
+                            }
+                            if ($isMatch) { break }
+                        }
                     }
                     
-                    # Check if the owner's display name matches any in the provided list
-                    if ($OwnerNames -contains $ownerDisplayName) {
-                        $filteredApps += $app
-                        break
+                    # Additional debugging for the problematic app
+                    if ($app.DisplayName -like "*Wnioski02*" -and -not $isMatch) {
+                        Write-Host "NO MATCH: 'Wnioski02' app with owners: $($allOwnerInfo -join ' | ')" -ForegroundColor Red
                     }
                 }
+                else {
+                    Write-Verbose "  No owners found for this app"
+                }
+            }
+            
+            Write-Host "##vso[task.logissue type=warning]Found $appWithOwnersCount apps with owners"
+            Write-Host "##vso[task.logissue type=warning]Matched $matchedAppsCount apps with the specified owner filter"
+            
+            # Emergency debugging to check if the Wnioski02 app is in the filtered results
+            $wnioskiApp = $filteredApps | Where-Object { $_.DisplayName -like "*Wnioski02*" }
+            if ($wnioskiApp) {
+                Write-Host "WARNING: Wnioski02 app is still in the filtered results!" -ForegroundColor Red
             }
             
             return $filteredApps
         }
         else {
-            Write-Host "Processing all App Registrations..."
+            Write-Host "No valid owner identifiers provided. Processing all App Registrations..."
             return $allApps
         }
     }
@@ -141,20 +218,28 @@ function Get-FormattedAppOwners {
         $ownersList = @()
         
         foreach ($owner in $owners) {
+            $ownerDetails = @()
+            
             if ($owner.AdditionalProperties.displayName) {
-                $ownerDisplayName = $owner.AdditionalProperties.displayName
-            }
-            elseif ($owner.AdditionalProperties.userPrincipalName) {
-                $ownerDisplayName = $owner.AdditionalProperties.userPrincipalName
-            }
-            else {
-                $ownerDisplayName = $owner.Id
+                $ownerDetails += "Name: $($owner.AdditionalProperties.displayName)"
             }
             
-            $ownersList += $ownerDisplayName
+            if ($owner.AdditionalProperties.userPrincipalName) {
+                $ownerDetails += "UPN: $($owner.AdditionalProperties.userPrincipalName)"
+            }
+            
+            if ($owner.AdditionalProperties.mail) {
+                $ownerDetails += "Email: $($owner.AdditionalProperties.mail)"
+            }
+            
+            if ($ownerDetails.Count -eq 0) {
+                $ownerDetails += "ID: $($owner.Id)"
+            }
+            
+            $ownersList += ($ownerDetails -join "; ")
         }
         
-        return $ownersList -join "|"
+        return $ownersList -join " | "
     }
     catch {
         Write-Warning "Error retrieving owners for application $AppId`: $($_.Exception.Message)"
@@ -268,7 +353,31 @@ function Format-RedirectUris {
 }
 
 # Main script execution
+
+# Debug info - always output exactly what's being searched for
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
+Write-Host "SCRIPT CONFIGURATION:" -ForegroundColor Cyan
+Write-Host "OutputPath: $OutputPath" -ForegroundColor Cyan
+Write-Host "DaysToExpiration: $DaysToExpiration" -ForegroundColor Cyan
+Write-Host "SpecificOwners:" -ForegroundColor Cyan
+if ($SpecificOwners.Count -eq 0) {
+    Write-Host "  EMPTY ARRAY - Will process ALL app registrations" -ForegroundColor Red
+} else {
+    foreach ($owner in $SpecificOwners) {
+        $displayValue = if ([string]::IsNullOrWhiteSpace($owner)) { "<EMPTY STRING>" } else { "[$owner]" }
+        Write-Host "  - $displayValue" -ForegroundColor Cyan
+    }
+}
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
+
+# Install required modules
+Install-Module Microsoft.Graph -AllowClobber -Force -Scope CurrentUser -ErrorAction SilentlyContinue
+#Install-Module Microsoft.Graph.Beta -AllowClobber -Force
+
 try {
+    # Set verbose output
+    $VerbosePreference = "Continue"
+    
     # Ensure required modules are installed
     Ensure-ModulesInstalled
     
@@ -276,9 +385,9 @@ try {
     Ensure-AzureAuthentication
     
     # Get filtered app registrations
-    $appRegistrations = Get-FilteredAppRegistrations -OwnerNames $SpecificOwners
+    $appRegistrations = Get-FilteredAppRegistrations -OwnerIdentifiers $SpecificOwners
     
-    Write-Host "Found $($appRegistrations.Count) App Registrations to check"
+    Write-Host "##vso[task.logissue type=warning]Found $($appRegistrations.Count) App Registrations to check for expiring credentials"
     
     $results = @()
     $appCounter = 0
@@ -335,14 +444,48 @@ try {
         }
     }
     
-    # Export results to CSV
+    # Export results to CSV and output VSO task logs for expired credentials
     if ($results.Count -gt 0) {
         $results | Export-Csv -Path $OutputPath -NoTypeInformation
-        Write-Host "Found $expiringAppsCounter App Registrations with $($results.Count) expiring or expired credentials"
+        Write-Host "##vso[task.logissue type=warning]Found $expiringAppsCounter App Registrations with $($results.Count) expiring or expired credentials"
         Write-Host "Report exported to: $OutputPath"
+        
+        # Output VSO task logs for expired app registrations
+        foreach ($result in $results) {
+            if ($result.Status -eq "Expired") {
+                $message = "Expired App Registration: $($result.DisplayName) - $($result.CredentialType) expired $([Math]::Abs($result.DaysToExpiration)) days ago"
+                Write-Host "##vso[task.logissue type=error]$message"
+            } 
+            elseif ($result.Status -eq "Expiring") {
+                $message = "Expiring App Registration: $($result.DisplayName) - $($result.CredentialType) expires in $($result.DaysToExpiration) days"
+                Write-Host "##vso[task.logissue type=warning]$message"
+            }
+        }
     }
     else {
-        Write-Host "No App Registrations found with credentials expiring within $DaysToExpiration days"
+        Write-Host "##vso[task.logissue type=warning]No App Registrations found with credentials expiring within $DaysToExpiration days"
+    }
+    
+    # Only display troubleshooting information if explicitly requested
+    if ($appRegistrations.Count -eq 0 -and $false) {  # Set to $true if you want to see the troubleshooting info
+        Write-Host "For troubleshooting purposes, listing some app registrations and their owners:"
+        $sampleApps = Get-MgApplication -Top 10
+        foreach ($app in $sampleApps) {
+            Write-Host "App: $($app.DisplayName)" -ForegroundColor Yellow
+            $owners = Get-MgApplicationOwner -ApplicationId $app.Id
+            if ($owners) {
+                foreach ($owner in $owners) {
+                    Write-Host "  Owner DisplayName: $($owner.AdditionalProperties.displayName)"
+                    Write-Host "  Owner UPN: $($owner.AdditionalProperties.userPrincipalName)"
+                    Write-Host "  Owner Mail: $($owner.AdditionalProperties.mail)"
+                    Write-Host "  Owner ID: $($owner.Id)"
+                    Write-Host "  ---"
+                }
+            } else {
+                Write-Host "  No owners found"
+            }
+            Write-Host ""
+        }
     }
 }
 catch {

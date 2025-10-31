@@ -11,6 +11,7 @@ The script generates the following files:
 - `log-auditIfNotExists.txt` – Contains policies that require parameters and those with a default action of *Deny* that can optionally be deployed as *Audit*.  
 - `initiative.json` – A JSON file that can be used directly to deploy the initiative.
 
+Please be aware that script during generating initiative.json skip policies containing "Deprecated" or "Preview".
 ## Manual Deployment (Without Running the Script)
 
 You can deploy the initiative manually if you prefer not to run the script.
